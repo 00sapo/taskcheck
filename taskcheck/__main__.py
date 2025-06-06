@@ -111,7 +111,7 @@ def main():
         if hasattr(args, "no_auto_adjust_urgency") and isinstance(
             args.no_auto_adjust_urgency, bool
         ):
-            check_tasks_kwargs["auto_adjust_urgency"] = not args.auto_adjust_urgency
+            check_tasks_kwargs["auto_adjust_urgency"] = not args.no_auto_adjust_urgency
         result = check_tasks_parallel(
             config,
             **check_tasks_kwargs,
