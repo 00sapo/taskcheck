@@ -17,7 +17,7 @@ class TestArgumentParsing:
         assert args.taskrc is None
         assert args.urgency_weight is None
         assert args.dry_run is False
-        assert args.auto_adjust_urgency is False
+        assert args.auto_adjust_urgency is True
 
     def test_arg_parser_all_flags(self):
         """Test all command line flags."""
@@ -93,10 +93,10 @@ class TestArgumentParsing:
 
     def test_auto_adjust_urgency_argument(self):
         """Test auto-adjust-urgency argument parsing."""
-        args = arg_parser.parse_args(["--auto-adjust-urgency"])
+        args = arg_parser.parse_args([])
         assert args.auto_adjust_urgency is True
 
-        args = arg_parser.parse_args([])
+        args = arg_parser.parse_args(["--no-auto-adjust-urgency"])
         assert args.auto_adjust_urgency is False
 
 
