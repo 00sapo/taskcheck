@@ -194,6 +194,7 @@ def get_tasks(config, tasks, year, month, day):
                         "id": task["id"],
                         "project": task.get("project", ""),
                         "description": task["description"],
+                        "urgency": task["urgency"],
                         "scheduling_day": f"{year}-{month}-{day}",
                         "scheduling_hours": m.group(1),
                         **{
