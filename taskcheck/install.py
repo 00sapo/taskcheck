@@ -24,7 +24,16 @@ emoji_keywords = {}
 
 
 def apply_config(key, value):
-    subprocess.run(["task", "config", key, value], stdout=subprocess.DEVNULL)
+    subprocess.run(
+        [
+            "task",
+            "rc.confirmation=0",
+            "config",
+            key,
+            value,
+        ],
+        stdout=subprocess.DEVNULL,
+    )
 
 
 def install():
