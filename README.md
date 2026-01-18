@@ -20,6 +20,12 @@ This is a taskwarrior extension that automatically schedules your tasks based on
 estimated time, and calendar events, finding an optimal time to work on each task and match all your
 deadlines.
 
+> [!IMPORTANT]
+> Due to the new synchronization method of TaskWarrior and to the lack of simple Android integration, I have moved to Super Productivity.
+> I won't develop this software anymore, but it is pretty stable, as I used it for about 1 year.
+>
+> I moved this same idea in a Super Productivity plugin: https://github.com/00sapo/sp-autoplan
+
 ## Features
 
 - [x] **Use arbitrarily complex time maps for working hours**
