@@ -80,6 +80,17 @@ class TestAvailableHours:
         available = get_available_hours(time_map, date, calendars)
         assert available == 0.0
 
+    def test_get_available_hours_multi_day_all_day_event(self, sample_config):
+        time_map = sample_config["time_maps"]["work"]
+        calendars = [[{
+            "start": datetime(2023, 12, 5, 0, 0),
+            "end": datetime(2023, 12, 7, 0, 0),
+        }]]
+
+        assert get_available_hours(time_map, datetime(2023, 12, 5).date(), calendars) == 0.0
+        assert get_available_hours(time_map, datetime(2023, 12, 6).date(), calendars) == 0.0
+        assert get_available_hours(time_map, datetime(2023, 12, 7).date(), calendars) == 8.0
+
 
 class TestLongRangeTimeMap:
     def test_get_long_range_time_map(self, sample_config, sample_calendar_events):

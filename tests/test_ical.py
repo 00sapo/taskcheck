@@ -75,6 +75,23 @@ END:VCALENDAR"""
         assert parse_ical_events(ical_text, days_ahead=7, all_day=False) == []
 
     @patch("taskcheck.ical.datetime")
+    def test_parse_multi_day_all_day_event_preserves_span(self, mock_datetime):
+        mock_datetime.now.return_value = datetime(2023, 12, 1, 12, 0, 0)
+        mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+        ical_text = """BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:test
+BEGIN:VEVENT
+UID:multi-day-event
+DTSTART;VALUE=DATE:20231205
+DTEND;VALUE=DATE:20231207
+SUMMARY:Two Day Event
+END:VEVENT
+END:VCALENDAR"""
+        events = parse_ical_events(ical_text, days_ahead=7, all_day=True)
+        assert events == [{"start": "2023-12-05T00:00:00", "end": "2023-12-07T00:00:00"}]
+
+    @patch("taskcheck.ical.datetime")
     def test_parse_ical_events_exdate_and_recurrence_id(self, mock_datetime):
         mock_datetime.now.return_value = datetime(2023, 12, 1, 12, 0, 0)
         mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)

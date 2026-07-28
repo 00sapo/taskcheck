@@ -40,17 +40,18 @@ def parse_ical_events(ical_text, days_ahead, all_day, tz_name=None, verbose=Fals
                 if not all_day:
                     continue
                 else:
-                    # all-day events should block since 00:00 and end at 23:59:59
                     event_start = datetime(
                         event_start.year,
                         event_start.month,
                         event_start.day,
-                        0,
-                        0,
-                        0,
-                        0,
                     )
-                    event_end = event_start + timedelta(days=1) - timedelta(seconds=1)
+                    event_end = datetime(
+                        event_end.year,
+                        event_end.month,
+                        event_end.day,
+                    )
+                    if event_end <= event_start:
+                        event_end = event_start + timedelta(days=1)
             if recurrence_id:
                 if end_date >= recurrence_id.dt.date() >= today:
                     # this was an occurrence of a recurring event
