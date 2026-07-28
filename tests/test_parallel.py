@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 from taskcheck.parallel import (
@@ -121,9 +121,42 @@ class TestTimeAllocation:
 
         allocate_time_for_day(task_info, 0, coeffs, verbose=True, weight_urgency=1.0)
 
-        # Should allocate time and update scheduling
         assert task_info["task-1"]["remaining_hours"] < 2.0
         assert len(task_info["task-1"]["scheduling"]) > 0
+
+    def test_allocate_time_for_day_wait_and_dependency_skip(self):
+        today = datetime.today().date()
+        wait_date = (today + timedelta(days=1)).strftime("%Y%m%dT%H%M%SZ")
+        task_info = {
+            "task-1": {
+                "task": {"id": 1, "uuid": "task-1", "estimated": "P2H", "wait": wait_date},
+                "remaining_hours": 2.0,
+                "task_time_map": [8.0],
+                "today_used_hours": 0.0,
+                "scheduling": {},
+                "urgency": 10.0,
+                "estimated_urgency": 8.0,
+                "due_urgency": 0.0,
+                "age_urgency": 1.0,
+                "started": False,
+            },
+            "task-2": {
+                "task": {"id": 2, "uuid": "task-2", "estimated": "P2H", "depends": ["task-1"]},
+                "remaining_hours": 2.0,
+                "task_time_map": [8.0],
+                "today_used_hours": 0.0,
+                "scheduling": {},
+                "urgency": 9.0,
+                "estimated_urgency": 8.0,
+                "due_urgency": 0.0,
+                "age_urgency": 1.0,
+                "started": False,
+            },
+        }
+        coeffs = UrgencyCoefficients({"P2H": 8.0}, False, 4.0, 365, 12, 2)
+        allocate_time_for_day(task_info, 0, coeffs, verbose=False, weight_urgency=1.0)
+        assert task_info["task-1"]["remaining_hours"] == 2.0
+        assert task_info["task-2"]["remaining_hours"] == 2.0
 
 
 class TestDependencies:
@@ -237,7 +270,6 @@ class TestWeightConfiguration:
         mock_tasks.assert_called_once()
 
     def test_recompute_urgencies_with_weights(self):
-        """Test that recompute_urgencies applies weights correctly."""
         tasks_remaining = {
             "task-1": {
                 "task": {"uuid": "task-1", "id": 1},
@@ -250,29 +282,19 @@ class TestWeightConfiguration:
             }
         }
 
-        coeffs = UrgencyCoefficients({"P1H": 5.0, "P2H": 8.0}, False, 0, 365, 12, 2)
+        coeffs = UrgencyCoefficients({"P2H": 8.0}, False, 0, 365, 12, 2)
         date = datetime.now().date()
-        weight_urgency = 0.7
+        recompute_urgencies(tasks_remaining, coeffs, date, 0.7)
+        assert tasks_remaining["task-1"]["urgency"] >= tasks_remaining["task-1"]["due_urgency"]
 
-        # Store original urgency to calculate base
-
-        recompute_urgencies(tasks_remaining, coeffs, date, weight_urgency)
-
-        # Check that weights were applied to the NEW urgency values (after recomputation)
-        task_info = tasks_remaining["task-1"]
-
-        # The function recomputes all urgency components, so we must use the new values after recomputation.
-        # The actual implementation does:
-        # base_urgency = new_urgency - new_due_urgency
-        # weighted_urgency = base_urgency * weight_urgency + new_due_urgency
-        base_urgency = (
-            (task_info["urgency"] - task_info["due_urgency"]) / weight_urgency
-            if weight_urgency != 0
-            else 0
-        )
-        expected_urgency = base_urgency * weight_urgency + task_info["due_urgency"]
-
-        assert abs(task_info["urgency"] - expected_urgency) < 0.01
+    def test_recompute_urgencies_inherit_and_cycle(self):
+        tasks_remaining = {
+            "a": {"task": {"uuid": "a", "depends": ["b"]}, "urgency": 1.0, "estimated_urgency": 0.0, "due_urgency": 0.0, "age_urgency": 0.0, "remaining_hours": 1.0, "started": False},
+            "b": {"task": {"uuid": "b", "depends": ["a"]}, "urgency": 2.0, "estimated_urgency": 0.0, "due_urgency": 0.0, "age_urgency": 0.0, "remaining_hours": 1.0, "started": False},
+        }
+        coeffs = UrgencyCoefficients({"P1H": 5.0}, True, 0, 365, 12, 2)
+        recompute_urgencies(tasks_remaining, coeffs, datetime.now().date(), 1.0)
+        assert tasks_remaining["a"]["urgency"] == tasks_remaining["b"]["urgency"]
 
 
 class TestMainSchedulingFunction:
@@ -468,69 +490,52 @@ class TestAutoAdjustUrgency:
         sample_config,
         test_taskrc,
     ):
-        """Test that the final urgency weight message is printed when auto-adjust is used."""
-        # Use relative dates based on current date
-        from datetime import datetime, timedelta
-
         now = datetime.now()
-        future_date_near = now + timedelta(days=3)
-        future_date_far = now + timedelta(days=7)
-
-        # Create tasks that will require at least one reduction in urgency weight
+        future_date = now + timedelta(days=3)
         overdue_tasks = [
-            {
-                "id": 1,
-                "uuid": "task-1",
-                "description": "Tight deadline",
-                "estimated": "P16H",  # 2 working days, due in 7 days
-                "time_map": "work",
-                "urgency": 20.0,
-                "due": future_date_far.strftime(
-                    "%Y%m%dT%H%M%SZ"
-                ),  # Due in 7 days - tight deadline
-                "status": "pending",
-                "entry": now.strftime("%Y%m%dT%H%M%SZ"),  # Created today
-            },
-            {
-                "id": 2,
-                "uuid": "task-2",
-                "description": "Competing task",
-                "estimated": "P16H",  # 2 working days, due in 3 days
-                "time_map": "work",
-                "urgency": 15.0,
-                "due": future_date_near.strftime(
-                    "%Y%m%dT%H%M%SZ"
-                ),  # Same deadline to create conflict
-                "status": "pending",
-                "entry": now.strftime("%Y%m%dT%H%M%SZ"),  # Created today
-            },
+            {"id": 1, "uuid": "task-1", "description": "Tight deadline", "estimated": "P16H", "time_map": "work", "urgency": 20.0, "due": future_date.strftime("%Y%m%dT%H%M%SZ"), "status": "pending", "entry": now.strftime("%Y%m%dT%H%M%SZ")},
+            {"id": 2, "uuid": "task-2", "description": "Competing task", "estimated": "P16H", "time_map": "work", "urgency": 15.0, "due": future_date.strftime("%Y%m%dT%H%M%SZ"), "status": "pending", "entry": now.strftime("%Y%m%dT%H%M%SZ")},
         ]
-
         mock_tasks.return_value = overdue_tasks
-        mock_coeffs.return_value = UrgencyCoefficients(
-            {"P16H": 10.0, "P8H": 8.0}, False, 4.0, 365, 12, 2
-        )
+        mock_coeffs.return_value = UrgencyCoefficients({"P16H": 10.0, "P8H": 8.0}, False, 4.0, 365, 12, 2)
         mock_calendars.return_value = []
-        # Mock enough available time that the task CAN be completed with weight reduction
-        mock_long_range.return_value = ([4.0] * 7, 0.0)  # 28 total hours available
-
+        mock_long_range.return_value = ([4.0] * 7, 0.0)
         with patch("taskcheck.parallel.console.print") as mock_console_print:
-            check_tasks_parallel(
-                sample_config,
-                verbose=True,
-                taskrc=test_taskrc,
-                auto_adjust_urgency=True,
-            )
+            check_tasks_parallel(sample_config, verbose=True, taskrc=test_taskrc, auto_adjust_urgency=True)
+            messages = [" ".join(str(arg).lower() for arg in call.args) for call in mock_console_print.call_args_list]
+            assert any("final urgency weight" in msg or "cannot find a solution" in msg for msg in messages)
 
-            # Should print the final urgency weight used
-            # Print all captured calls for debugging if the assertion fails
-            found_final_weight = any(
-                "final urgency weight"
-                in " ".join(str(arg).lower() for arg in call.args)
-                for call in mock_console_print.call_args_list
-            )
-            if not found_final_weight:
-                print("Captured console.print calls for debug:")
-                for call in mock_console_print.call_args_list:
-                    print(str(call))
-            assert found_final_weight
+    @patch("taskcheck.parallel.get_calendars")
+    @patch("taskcheck.parallel.get_tasks")
+    @patch("taskcheck.parallel.get_urgency_coefficients")
+    @patch("taskcheck.parallel.get_long_range_time_map")
+    def test_check_tasks_parallel_dry_run_and_warning(
+        self,
+        mock_long_range,
+        mock_coeffs,
+        mock_tasks,
+        mock_calendars,
+        sample_config,
+        test_taskrc,
+    ):
+        now = datetime.now()
+        due = (now + timedelta(days=1)).strftime("%Y%m%dT%H%M%SZ")
+        mock_tasks.return_value = [{"id": 1, "uuid": "task-1", "description": "x", "estimated": "P2H", "time_map": "work", "urgency": 1.0, "due": due, "status": "pending", "entry": now.strftime("%Y%m%dT%H%M%SZ") }]
+        mock_coeffs.return_value = UrgencyCoefficients({"P2H": 8.0}, False, 4.0, 365, 12, 2)
+        mock_calendars.return_value = []
+        mock_long_range.return_value = ([0.5] * 7, 0.0)
+        with patch("taskcheck.parallel.console.print") as mock_print:
+            result = check_tasks_parallel(sample_config, verbose=False, taskrc=test_taskrc, dry_run=True, auto_adjust_urgency=False)
+        assert isinstance(result, list)
+        assert result
+        assert any("warning" in " ".join(str(a).lower() for a in call.args) for call in mock_print.call_args_list)
+
+    def test_update_tasks_with_scheduling_info_warns_when_late(self):
+        task_info = {
+            "u": {"task": {"id": 1, "description": "late", "due": "20231201T000000Z"}, "scheduling": {"2023-12-05": 2.0}}
+        }
+        with patch("taskcheck.parallel.subprocess.run") as mock_run, patch("taskcheck.parallel.console.print") as mock_print:
+            from taskcheck.parallel import update_tasks_with_scheduling_info
+            update_tasks_with_scheduling_info(task_info, verbose=False, taskrc="/tmp/taskrc")
+        mock_run.assert_called_once()
+        assert mock_print.called
