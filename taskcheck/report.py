@@ -273,15 +273,11 @@ def generate_report(config, constraint, verbose=False, force_update=False, taskr
     config = config["report"]
     console = Console()
     
-    if scheduling_results is not None:
-        # Use provided scheduling results (from dry-run mode)
-        tasks = scheduling_results
-    else:
-        # Fetch tasks from Taskwarrior normally
-        tasks = fetch_tasks(taskrc)
+    original_tasks = fetch_tasks(taskrc)
+    tasks = scheduling_results if scheduling_results is not None else original_tasks
 
     if config.get("include_unplanned"):
-        unplanned_tasks = get_unplanned_tasks(config, tasks, taskrc=taskrc)
+        unplanned_tasks = get_unplanned_tasks(config, original_tasks, taskrc=taskrc)
         display_unplanned_tasks(console, config, unplanned_tasks)
 
     for year, month, day in get_days_in_constraint(constraint, taskrc=taskrc):

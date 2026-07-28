@@ -197,7 +197,25 @@ class TestReportGeneration:
             }
         ]
         
-        # Should run without error
         generate_report(sample_config, "today", verbose=True, taskrc=test_taskrc)
         
         mock_unplanned.assert_called_once_with(sample_config["report"], [], taskrc=test_taskrc)
+
+    @patch('taskcheck.report.display_unplanned_tasks')
+    @patch('taskcheck.report.get_unplanned_tasks')
+    @patch('taskcheck.report.get_days_in_constraint')
+    @patch('taskcheck.report.fetch_tasks')
+    def test_generate_report_dry_run_keeps_unplanned_block(self, mock_fetch, mock_days, mock_unplanned, mock_display, sample_config, test_taskrc):
+        mock_fetch.return_value = [
+            {"id": 1, "description": "Planned", "scheduling": "2023-12-05 - PT2H", "urgency": 1.0, "project": "x"},
+            {"id": 2, "description": "No plan", "estimated": "", "urgency": 2.0, "project": "y"},
+        ]
+        mock_days.return_value = [(2023, 12, 5)]
+        mock_unplanned.return_value = [{"id": 2, "description": "No plan", "urgency": 2.0, "project": "y"}]
+        scheduling_results = [{"id": 1, "description": "Planned", "scheduling_hours": "PT2H", "project": "x", "urgency": 1.0, "scheduling": "2023-12-05 - PT2H"}]
+
+        generate_report(sample_config, "today", verbose=False, taskrc=test_taskrc, scheduling_results=scheduling_results)
+
+        mock_fetch.assert_called_once_with(test_taskrc)
+        mock_unplanned.assert_called_once_with(sample_config["report"], mock_fetch.return_value, taskrc=test_taskrc)
+        mock_display.assert_called_once()
