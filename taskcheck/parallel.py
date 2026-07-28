@@ -535,7 +535,7 @@ def update_tasks_with_scheduling_info(task_info, verbose, taskrc):
                 "modify",
                 f"scheduled:{start_date}",
                 f"completion_date:{end_date}",
-                f'scheduling:"{scheduling_note.strip()}"',
+                f"scheduling:{scheduling_note.strip()}",
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

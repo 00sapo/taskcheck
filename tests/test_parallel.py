@@ -538,4 +538,6 @@ class TestAutoAdjustUrgency:
             from taskcheck.parallel import update_tasks_with_scheduling_info
             update_tasks_with_scheduling_info(task_info, verbose=False, taskrc="/tmp/taskrc")
         mock_run.assert_called_once()
+        command = mock_run.call_args.args[0]
+        assert command[-1] == "scheduling:2023-12-05 - PT2H"
         assert mock_print.called

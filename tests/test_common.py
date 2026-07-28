@@ -13,7 +13,8 @@ from taskcheck.common import (
     get_long_range_time_map,
     get_tasks,
     get_calendars,
-    get_task_env
+    get_task_env,
+    mark_end_date,
 )
 
 
@@ -32,6 +33,23 @@ class TestTimeConversions:
         assert time_to_decimal(time(9, 0)) == 9.0
         assert time_to_decimal(time(9, 30)) == 9.5
         assert time_to_decimal(time(14, 15)) == 14.25
+
+
+class TestTaskUpdates:
+    @patch("taskcheck.common.subprocess.run")
+    def test_mark_end_date_passes_unquoted_scheduling_value(self, mock_run):
+        mark_end_date(
+            None,
+            "2026-07-29",
+            "2026-07-28",
+            "2026-07-28 - PT1H\n2026-07-29 - PT1H",
+            1,
+        )
+
+        command = mock_run.call_args.args[0]
+        assert command[-1] == (
+            "scheduling:2026-07-28 - PT1H\n2026-07-29 - PT1H"
+        )
 
 
 class TestDurationConversions:

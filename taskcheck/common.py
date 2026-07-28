@@ -196,7 +196,7 @@ def mark_end_date(
             str(id),
             "modify",
             *start_end_fields,
-            f'scheduling:"{scheduling_note}"',
+            f"scheduling:{scheduling_note}",
         ],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
