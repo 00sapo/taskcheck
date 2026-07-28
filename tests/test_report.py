@@ -10,7 +10,8 @@ from taskcheck.report import (
     generate_report,
     get_task_emoji,
     tostring,
-    get_unplanned_tasks
+    get_unplanned_tasks,
+    fetch_tasks,
 )
 
 
@@ -128,6 +129,18 @@ class TestTaskFiltering:
 
         assert [task["id"] for task in result] == [1, 2]
         mock_date.assert_called_once_with("30d", taskrc=test_taskrc)
+
+
+class TestFetchTasks:
+    @patch('subprocess.run')
+    def test_fetch_tasks_uses_parenthesis_free_filter(self, mock_run, test_taskrc):
+        mock_run.return_value = Mock(stdout=json.dumps([]))
+
+        assert fetch_tasks(test_taskrc) == []
+        assert mock_run.call_args.args[0] == [
+            "task", "scheduling~.", "+PENDING", "or", "+WAITING", "export"
+        ]
+        assert mock_run.call_args.kwargs["env"]["TASKRC"] == test_taskrc
 
 
 class TestStringFormatting:

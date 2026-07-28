@@ -304,7 +304,7 @@ def fetch_tasks(taskrc=None):
 
     env = get_task_env(taskrc)
     tasks = subprocess.run(
-        ["task", "scheduling~.", "(", "+PENDING", "or", "+WAITING", ")", "export"],
+        ["task", "scheduling~.", "+PENDING", "or", "+WAITING", "export"],
         capture_output=True,
         text=True,
         env=env,
