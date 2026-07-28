@@ -26,7 +26,6 @@ deadlines.
 ## Features
 
 - [x] **Use arbitrarily complex time maps for working hours**
-- [x] Block scheduling time using iCal calendars (meetings, vacations, holidays, etc.)
 - [x] **Parallel scheduling algorithm for multiple tasks, considering urgency and dependencies**
 - [x] Dry-run mode: preview scheduling without modifying your Taskwarrior database
 - [x] Custom urgency weighting for scheduling (via CLI or config)
@@ -34,7 +33,7 @@ deadlines.
 - [x] Force update of iCal calendars, bypassing cache
 - [x] Simple, customizable reports for planned and unplanned tasks
 - [x] Emoji and attribute customization in reports
-- [ ] Use Google API to access calendars
+- [x] **Block scheduling time using iCal and/or Google Calendars (even full-day blocking for vacation)**
 
 ## Install
 
@@ -132,16 +131,39 @@ unplanned_max_due = "30d"       # Only show unplanned tasks due within this Task
 emoji_keywords = {"meet"=":busts_in_silhouette:", "review"=":mag_right:"} # Map keywords to emoji
 ```
 
+### Google Calendar
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create or select a project.
+2. Open **APIs & Services → Library** and enable **Google Calendar API**.
+3. Open **APIs & Services → OAuth consent screen**. Configure the app and add these scopes: `openid`, `https://www.googleapis.com/auth/userinfo.email`, `https://www.googleapis.com/auth/userinfo.profile`, and `https://www.googleapis.com/auth/calendar.readonly`.
+4. Open **APIs & Services → Credentials → Create credentials → OAuth client ID**. Select **Desktop app**, create the client, and download its JSON file. Rename it to `client_secret.json`; place it at `~/.config/task/google/client_secret.json`. Keep it private and out of version control.
+5. Run `uv run taskcheck --add-google-calendar`. Your browser opens the Google login and consent screen; choose an account and calendar. The command prints a TOML section and saves its OAuth token under Taskwarrior's data directory.
+6. Copy the printed section into `~/.config/task/taskcheck.toml`. The calendar table key must remain quoted because Google calendar IDs commonly contain `@` and `.`:
+
+```toml
+[calendars."personal.primary@example.com"]
+url = "google://primary@example.com"
+provider = "google"
+account = "personal"
+calendar_id = "primary@example.com"
+token_path = "/home/user/.config/task/google/personal.token.json"
+event_all_day_is_blocking = true
+expiration = 0.25
+```
+
+Then run `uv run taskcheck --schedule`.
+
 ### Configuration Options
 
 - **[scheduler]**
   - `days_ahead`: How many days ahead to schedule tasks.
   - `weight_urgency`: Default weight for urgency in scheduling (0.0 to 1.0). Can be overridden with `--urgency-weight`.
 - **[calendars]**
-  - `url`: iCal URL to block time.
+  - `url`: iCal URL or `google://<calendar-id>` to block time.
   - `expiration`: Cache expiration in hours.
   - `timezone`: (Optional) Force a timezone for this calendar.
   - `event_all_day_is_blocking`: (Optional, bool) Treat all-day events as blocking.
+  - Google calendars also require `provider = "google"`, `calendar_id`, and `token_path`.
 - **[report]**
   - `include_unplanned`: Show unplanned tasks in a separate section.
   - `additional_attributes`: Extra columns to show in the report.
