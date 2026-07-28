@@ -54,6 +54,11 @@ arg_parser.add_argument(
     default=True,
     help="Disable automatic reduction of urgency weight when tasks cannot be completed on time. (Enabled by default, meaning automatic reduction will occur.)",
 )
+arg_parser.add_argument(
+    "--add-google-calendar",
+    action="store_true",
+    help="Authenticate with Google, list calendars, and print a config section for the selected calendar.",
+)
 
 
 # Load working hours and exceptions from TOML file
@@ -98,6 +103,12 @@ def main():
         from taskcheck.install import install
 
         install()
+        return
+
+    if getattr(args, "add_google_calendar", False) is True:
+        from taskcheck.google_calendar import add_google_calendar
+
+        add_google_calendar(taskrc=args.taskrc)
         return
 
     if args.schedule:
