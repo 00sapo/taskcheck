@@ -1,6 +1,7 @@
 set newversion (sed -n 's/^version = "\(.*\)"$/\1/p' pyproject.toml)
 git commit -am "new v$newversion"
 git tag -a v$newversion -m "v$newversion"
+git push
 git push --tags
 rm -rf dist
 uv build
