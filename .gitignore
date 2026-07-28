@@ -11,3 +11,10 @@ wheels/
 .aider*
 .coverage
 aider.session
+.pi/tokenomy-cache
+.pi
+coverage.json
+coverage.xml
+task_plan.md
+findings.md
+progress.md

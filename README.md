@@ -21,7 +21,7 @@ estimated time, and calendar events, finding an optimal time to work on each tas
 deadlines.
 
 > [!IMPORTANT]
-> This repo is actively mantained again
+> This repo is actively maintained again
 
 ## Features
 
