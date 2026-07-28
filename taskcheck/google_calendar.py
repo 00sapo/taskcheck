@@ -1,5 +1,6 @@
 import json
 import warnings
+from datetime import datetime, time, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -77,6 +78,53 @@ def list_calendars(credentials):
     service = build("calendar", "v3", credentials=credentials, cache_discovery=False)
     result = service.calendarList().list().execute()
     return result.get("items", [])
+
+
+def google_calendar_to_dict(calendar_id, token_path, days_ahead, all_day=True):
+    token_path = Path(token_path).expanduser()
+    if not token_path.exists():
+        raise FileNotFoundError(f"Missing Google OAuth token: {token_path}")
+
+    credentials = Credentials.from_authorized_user_file(str(token_path), SCOPES)
+    if credentials.expired and credentials.refresh_token:
+        credentials.refresh(Request())
+        token_path.write_text(credentials.to_json())
+    if not credentials.valid:
+        raise RuntimeError(f"Invalid Google OAuth token: {token_path}")
+
+    service = build("calendar", "v3", credentials=credentials, cache_discovery=False)
+    timezone = datetime.now().astimezone().tzinfo
+    start = datetime.combine(datetime.now().date(), time.min, timezone)
+    end = start + timedelta(days=days_ahead + 1)
+    params = {
+        "calendarId": calendar_id,
+        "timeMin": start.isoformat(),
+        "timeMax": end.isoformat(),
+        "singleEvents": True,
+        "orderBy": "startTime",
+    }
+    events = []
+    while True:
+        result = service.events().list(**params).execute()
+        for item in result.get("items", []):
+            event_start = item.get("start", {})
+            event_end = item.get("end", {})
+            if "dateTime" in event_start and "dateTime" in event_end:
+                events.append(
+                    {"start": event_start["dateTime"], "end": event_end["dateTime"]}
+                )
+            elif all_day and "date" in event_start and "date" in event_end:
+                events.append(
+                    {
+                        "start": datetime.fromisoformat(event_start["date"]).isoformat(),
+                        "end": datetime.fromisoformat(event_end["date"]).isoformat(),
+                    }
+                )
+        page_token = result.get("nextPageToken")
+        if not page_token:
+            break
+        params["pageToken"] = page_token
+    return events
 
 
 def select_from_list(items, title_key="summary"):

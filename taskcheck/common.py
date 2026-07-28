@@ -211,16 +211,31 @@ def mark_end_date(
 def get_calendars(config, verbose=False, force_update=False):
     calendars = []
     for calname in config["calendars"]:
-        calendar = config["calendars"][calname]
-        calendar = ical_to_dict(
-            calendar["url"],
-            config["scheduler"]["days_ahead"],
-            all_day=calendar["event_all_day_is_blocking"],
-            expiration=calendar["expiration"],
-            verbose=verbose,
-            tz_name=calendar.get("timezone"),
-            force_update=force_update,
-        )
+        calendar_config = config["calendars"][calname]
+        if (
+            calendar_config.get("provider") == "google"
+            or calendar_config["url"].startswith("google://")
+        ):
+            from taskcheck.google_calendar import google_calendar_to_dict
+
+            calendar = google_calendar_to_dict(
+                calendar_config.get(
+                    "calendar_id", calendar_config["url"].removeprefix("google://")
+                ),
+                calendar_config["token_path"],
+                config["scheduler"]["days_ahead"],
+                all_day=calendar_config["event_all_day_is_blocking"],
+            )
+        else:
+            calendar = ical_to_dict(
+                calendar_config["url"],
+                config["scheduler"]["days_ahead"],
+                all_day=calendar_config["event_all_day_is_blocking"],
+                expiration=calendar_config["expiration"],
+                verbose=verbose,
+                tz_name=calendar_config.get("timezone"),
+                force_update=force_update,
+            )
         calendar.sort(key=lambda e: e["start"])
         calendars.append(calendar)
     if verbose:

@@ -150,6 +150,31 @@ class TestGetCalendars:
         assert calendars[0] == sample_calendar_events
         mock_ical.assert_called_once()
 
+    @patch("taskcheck.google_calendar.google_calendar_to_dict")
+    @patch("taskcheck.common.ical_to_dict")
+    def test_get_google_calendars(
+        self, mock_ical, mock_google, sample_config, sample_calendar_events
+    ):
+        sample_config["calendars"] = {
+            "google": {
+                "url": "google://primary",
+                "provider": "google",
+                "calendar_id": "primary",
+                "token_path": "/tmp/google.token.json",
+                "event_all_day_is_blocking": True,
+                "expiration": 0.25,
+            }
+        }
+        mock_google.return_value = sample_calendar_events
+
+        calendars = get_calendars(sample_config)
+
+        assert calendars == [sample_calendar_events]
+        mock_google.assert_called_once_with(
+            "primary", "/tmp/google.token.json", 7, all_day=True
+        )
+        mock_ical.assert_not_called()
+
 
 class TestEnvironmentVariables:
     def test_get_task_env_sets_both_variables(self, test_taskrc):

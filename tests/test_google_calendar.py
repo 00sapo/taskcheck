@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 from taskcheck.google_calendar import (
     _safe_account_id,
     get_client_secrets_path,
+    google_calendar_to_dict,
     render_calendar_config,
 )
 from taskcheck.__main__ import main
@@ -26,6 +27,39 @@ def test_render_calendar_config(mock_token_path):
     cfg = render_calendar_config("foo", {"id": "abc123"}, taskrc="/tmp/task")
     assert '[calendars."foo.abc123"]' in cfg
     assert "calendar_id = \"abc123\"" in cfg
+
+
+@patch("taskcheck.google_calendar.build")
+@patch("taskcheck.google_calendar.Credentials.from_authorized_user_file")
+def test_google_calendar_to_dict(mock_credentials, mock_build, tmp_path):
+    token_path = tmp_path / "token.json"
+    token_path.write_text("{}")
+    mock_credentials.return_value = Mock(valid=True, expired=False)
+    events = Mock()
+    events.list.return_value.execute.return_value = {
+        "items": [
+            {
+                "start": {"dateTime": "2025-01-02T09:00:00+01:00"},
+                "end": {"dateTime": "2025-01-02T10:00:00+01:00"},
+            },
+            {
+                "start": {"date": "2025-01-03"},
+                "end": {"date": "2025-01-04"},
+            },
+        ]
+    }
+    mock_build.return_value.events.return_value = events
+
+    result = google_calendar_to_dict("primary", token_path, 7, all_day=True)
+
+    assert result == [
+        {
+            "start": "2025-01-02T09:00:00+01:00",
+            "end": "2025-01-02T10:00:00+01:00",
+        },
+        {"start": "2025-01-03T00:00:00", "end": "2025-01-04T00:00:00"},
+    ]
+    events.list.assert_called_once()
 
 
 @patch("taskcheck.google_calendar.add_google_calendar")
