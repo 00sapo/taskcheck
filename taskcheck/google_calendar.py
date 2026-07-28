@@ -1,4 +1,5 @@
 import json
+import warnings
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -12,8 +13,8 @@ from taskcheck.common import config_dir, get_task_env
 
 SCOPES = [
     "openid",
-    "email",
-    "profile",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/calendar.readonly",
 ]
 
@@ -25,6 +26,9 @@ def get_google_data_dir(taskrc=None):
 
 
 def get_client_secrets_path(taskrc=None):
+    repo_secret = Path.cwd() / "client_secret.json"
+    if repo_secret.exists():
+        return repo_secret
     return get_google_data_dir(taskrc) / "client_secret.json"
 
 
@@ -51,7 +55,9 @@ def load_credentials(taskrc=None):
         creds.refresh(Request())
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(str(secrets_path), SCOPES)
-        creds = flow.run_local_server(port=0)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=r'^Scope has changed from .*')
+            creds = flow.run_local_server(port=0)
         token_path.write_text(creds.to_json())
     return creds
 
@@ -85,7 +91,7 @@ def select_from_list(items, title_key="summary"):
 
 def render_calendar_config(account_id, calendar, taskrc=None):
     token_path = get_token_path(account_id, taskrc)
-    return f'''[calendars.{account_id}.{calendar["id"]}]
+    return f'''[calendars."{account_id}.{calendar["id"]}"]
 url = "google://{calendar["id"]}"
 provider = "google"
 account = "{account_id}"

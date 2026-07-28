@@ -1,6 +1,11 @@
+from pathlib import Path
 from unittest.mock import Mock, patch
 
-from taskcheck.google_calendar import _safe_account_id, render_calendar_config
+from taskcheck.google_calendar import (
+    _safe_account_id,
+    get_client_secrets_path,
+    render_calendar_config,
+)
 from taskcheck.__main__ import main
 
 
@@ -8,11 +13,18 @@ def test_safe_account_id():
     assert _safe_account_id("foo.bar@example.com") == "foo_bar_example_com"
 
 
+def test_get_client_secrets_path_prefers_repo_root(tmp_path, monkeypatch):
+    secret = tmp_path / "client_secret.json"
+    secret.write_text("{}")
+    monkeypatch.chdir(tmp_path)
+    assert get_client_secrets_path("/tmp/task") == secret
+
+
 @patch("taskcheck.google_calendar.get_token_path")
 def test_render_calendar_config(mock_token_path):
     mock_token_path.return_value = "/tmp/task/google/foo.token.json"
     cfg = render_calendar_config("foo", {"id": "abc123"}, taskrc="/tmp/task")
-    assert "[calendars.foo.abc123]" in cfg
+    assert '[calendars."foo.abc123"]' in cfg
     assert "calendar_id = \"abc123\"" in cfg
 
 
