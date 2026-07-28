@@ -187,7 +187,7 @@ def get_tasks(config, tasks, year, month, day):
             if m:
                 due = task.get("due", "")
                 if due:
-                    due = datetime.strptime(due, "%Y%m%dT%H%M%SZ")
+                    due = parse_taskwarrior_timestamp(due)
                     due = due - datetime.today()
                 valid_tasks.append(
                     {
@@ -219,7 +219,7 @@ def get_taskwarrior_date(date, _retry=True, taskrc=None):
     )
     date = date.stdout.strip()
     try:
-        date = datetime.strptime(date, "%Y-%m-%dT%H:%M:%S")
+        date = parse_taskwarrior_timestamp(date)
     except Exception as _:
         if _retry:
             return get_taskwarrior_date("today+" + date, False, taskrc)
@@ -247,7 +247,7 @@ def tostring(value):
         return value.strftime("%Y-%m-%d %H:%M")
     elif isinstance(value, str):
         try:
-            date = datetime.strptime(value, "%Y%m%dT%H%M%SZ")
+            date = parse_taskwarrior_timestamp(value)
             return date.strftime("%Y-%m-%d %H:%M")
         except ValueError:
             return value
@@ -275,7 +275,7 @@ def get_unplanned_tasks(config, tasks, taskrc=None):
         task
         for task in tasks
         if not task.get("due")
-        or datetime.strptime(task["due"], "%Y%m%dT%H%M%SZ") <= due_limit
+        or parse_taskwarrior_timestamp(task["due"]) <= due_limit
     ]
 
 
@@ -296,6 +296,15 @@ def generate_report(config, constraint, verbose=False, force_update=False, taskr
         display_date_header(console, year, month, day)
 
         display_tasks_table(console, config, this_day_tasks)
+
+
+def parse_taskwarrior_timestamp(value):
+    for fmt in ("%Y%m%dT%H%M%SZ", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            pass
+    raise ValueError(value)
 
 
 def fetch_tasks(taskrc=None):

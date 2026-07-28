@@ -12,6 +12,7 @@ from taskcheck.report import (
     tostring,
     get_unplanned_tasks,
     fetch_tasks,
+    parse_taskwarrior_timestamp,
 )
 
 
@@ -152,10 +153,19 @@ class TestStringFormatting:
         dt = datetime(2023, 12, 5, 14, 30, 0)
         assert tostring(dt) == "2023-12-05 14:30"
         
-    def test_tostring_taskwarrior_date(self):
-        tw_date = "20231205T143000Z"
-        result = tostring(tw_date)
-        assert "2023-12-05 14:30" == result
+    @pytest.mark.parametrize(
+        ("timestamp", "expected"),
+        [
+            ("20231205T143000Z", datetime(2023, 12, 5, 14, 30)),
+            ("2023-12-05T14:30:00Z", datetime(2023, 12, 5, 14, 30)),
+        ],
+    )
+    def test_parse_taskwarrior_timestamp_supports_v2_and_v3(self, timestamp, expected):
+        assert parse_taskwarrior_timestamp(timestamp) == expected
+
+    @pytest.mark.parametrize("timestamp", ["20231205T143000Z", "2023-12-05T14:30:00Z"])
+    def test_tostring_taskwarrior_date(self, timestamp):
+        assert tostring(timestamp) == "2023-12-05 14:30"
         
     def test_tostring_regular_string(self):
         assert tostring("hello") == "hello"
