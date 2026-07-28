@@ -19,6 +19,7 @@ weight_urgency = 1.0
 include_unplanned = true
 additional_attributes = []
 additional_attributes_unplanned = []
+# unplanned_max_due = "30d"
 emoji_keywords = {}
 """
 

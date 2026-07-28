@@ -111,6 +111,24 @@ class TestTaskFiltering:
         assert 'env' in call_args.kwargs
         assert call_args.kwargs['env']['TASKRC'] == test_taskrc
 
+    @patch('taskcheck.report.get_taskwarrior_date')
+    @patch('subprocess.run')
+    def test_get_unplanned_tasks_filters_due_horizon(self, mock_run, mock_date, sample_config, test_taskrc):
+        config = {**sample_config["report"], "unplanned_max_due": "30d"}
+        mock_date.return_value = datetime(2023, 12, 31)
+        mock_result = Mock()
+        mock_result.stdout = json.dumps([
+            {"id": 1, "description": "No deadline"},
+            {"id": 2, "description": "Due soon", "due": "20231215T120000Z"},
+            {"id": 3, "description": "Due later", "due": "20240115T120000Z"},
+        ])
+        mock_run.return_value = mock_result
+
+        result = get_unplanned_tasks(config, [], taskrc=test_taskrc)
+
+        assert [task["id"] for task in result] == [1, 2]
+        mock_date.assert_called_once_with("30d", taskrc=test_taskrc)
+
 
 class TestStringFormatting:
     def test_tostring_boolean(self):

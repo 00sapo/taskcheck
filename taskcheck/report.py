@@ -266,7 +266,17 @@ def get_unplanned_tasks(config, tasks, taskrc=None):
         env=env,
     )
     tasks = json.loads(tasks.stdout)
-    return tasks
+    max_due = config.get("unplanned_max_due")
+    if not max_due:
+        return tasks
+
+    due_limit = get_taskwarrior_date(max_due, taskrc=taskrc)
+    return [
+        task
+        for task in tasks
+        if not task.get("due")
+        or datetime.strptime(task["due"], "%Y%m%dT%H%M%SZ") <= due_limit
+    ]
 
 
 def generate_report(config, constraint, verbose=False, force_update=False, taskrc=None, scheduling_results=None):

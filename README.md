@@ -21,10 +21,7 @@ estimated time, and calendar events, finding an optimal time to work on each tas
 deadlines.
 
 > [!IMPORTANT]
-> Due to the new synchronization method of TaskWarrior and to the lack of simple Android integration, I have moved to Super Productivity.
-> I won't develop this software anymore, but it is pretty stable, as I used it for about 1 year.
->
-> I moved this same idea in a Super Productivity plugin: https://github.com/00sapo/sp-autoplan
+> This repo is actively mantained again
 
 ## Features
 
@@ -38,7 +35,6 @@ deadlines.
 - [x] Simple, customizable reports for planned and unplanned tasks
 - [x] Emoji and attribute customization in reports
 - [ ] Use Google API to access calendars
-- [ ] Export tasks to iCal calendar and API calendars
 
 ## Install
 
@@ -132,6 +128,7 @@ expiration = 720          # In hours (720 hours = 30 days)
 include_unplanned = true
 additional_attributes = ["estimated", "due", "urgency"]           # Extra attributes to show in the report
 additional_attributes_unplanned = ["due", "urgency"]               # Extra attributes for unplanned tasks
+unplanned_max_due = "30d"       # Only show unplanned tasks due within this Taskwarrior-relative horizon; tasks without a due date are always shown
 emoji_keywords = {"meet"=":busts_in_silhouette:", "review"=":mag_right:"} # Map keywords to emoji
 ```
 
@@ -149,6 +146,7 @@ emoji_keywords = {"meet"=":busts_in_silhouette:", "review"=":mag_right:"} # Map 
   - `include_unplanned`: Show unplanned tasks in a separate section.
   - `additional_attributes`: Extra columns to show in the report.
   - `additional_attributes_unplanned`: Extra columns for unplanned tasks.
+  - `unplanned_max_due`: Optional Taskwarrior-relative horizon (for example `30d`) for dated unplanned tasks. Tasks without a due date are always shown; omitting this setting applies no limit.
   - `emoji_keywords`: Map keywords in task descriptions to emoji.
 
 ## Algorithm
