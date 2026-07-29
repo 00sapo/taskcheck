@@ -1,26 +1,12 @@
 <div align="center">
-
-```
-########    ###     ######  ##    ##  ######  ##     ## ########  ######  ##    ##
-   ##      ## ##   ##    ## ##   ##  ##    ## ##     ## ##       ##    ## ##   ##
-   ##     ##   ##  ##       ##  ##   ##       ##     ## ##       ##       ##  ##
-   ##    ##     ##  ######  #####    ##       ######### ######   ##       #####
-   ##    #########       ## ##  ##   ##       ##     ## ##       ##       ##  ##
-   ##    ##     ## ##    ## ##   ##  ##    ## ##     ## ##       ##    ## ##   ##
-   ##    ##     ##  ######  ##    ##  ######  ##     ## ########  ######  ##    ##
-```
-
-> _A non-AI automatic scheduler for taskwarrior (i.e. alternative to skedpal / timehero / flowsavvy / reclaim / trevor / motion)_
-
   ![immagine](https://github.com/user-attachments/assets/27b83bb1-7a50-4923-a453-0a958fbe11ed)
+
+   > _A non-AI automatic scheduler for taskwarrior (i.e. alternative to skedpal / timehero / flowsavvy / reclaim / trevor / motion)_
 
 </div>
 
 A Taskwarrior scheduler for people who want a realistic plan, not a manual to-do list.
 It turns tasks, working hours, and calendar blocks into an actionable schedule — then keeps due dates visible.
-
-> [!TIP]
-> If you already use Taskwarrior, Taskcheck gives it a brain for time.
 
 Use it if you want to:
 - stop guessing what to do next
