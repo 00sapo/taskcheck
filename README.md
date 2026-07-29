@@ -1,7 +1,7 @@
 <div align="center">
-  ![immagine](https://github.com/user-attachments/assets/27b83bb1-7a50-4923-a453-0a958fbe11ed)
+![immagine](https://github.com/user-attachments/assets/27b83bb1-7a50-4923-a453-0a958fbe11ed)
 
-   > _A non-AI automatic scheduler for taskwarrior (i.e. alternative to skedpal / timehero / flowsavvy / reclaim / trevor / motion)_
+> _A non-AI automatic scheduler for taskwarrior (i.e. alternative to skedpal / timehero / flowsavvy / reclaim / trevor / motion)_
 
 </div>
 
