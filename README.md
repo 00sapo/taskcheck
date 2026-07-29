@@ -6,7 +6,7 @@ It turns tasks, working hours, and calendar blocks into an actionable schedule â
 Use it if you want to:
 - stop guessing what to do next
 - fit tasks into real availability
-- catch overload before deadlines slip
+- be sure your long-time plan won't go overdue
 - keep Taskwarrior as the source of truth
 
 > [!IMPORTANT]
