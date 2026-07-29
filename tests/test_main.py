@@ -1,5 +1,7 @@
-import pytest
+from importlib.metadata import version
 from unittest.mock import patch, Mock, mock_open
+
+import pytest
 
 from taskcheck.__main__ import main, load_config, arg_parser
 
@@ -98,6 +100,12 @@ class TestArgumentParsing:
 
         args = arg_parser.parse_args(["--no-auto-adjust-urgency"])
         assert args.auto_adjust_urgency is False
+
+    def test_version_argument(self, capsys):
+        with pytest.raises(SystemExit, match="0"):
+            arg_parser.parse_args(["--version"])
+
+        assert capsys.readouterr().out == f"taskcheck {version('taskcheck')}\n"
 
 
 class TestConfigLoading:

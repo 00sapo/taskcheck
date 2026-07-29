@@ -1,10 +1,12 @@
 import tomllib
 import argparse
+from importlib.metadata import version
 
 from taskcheck.parallel import check_tasks_parallel
 from taskcheck.common import config_dir
 
 arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument("--version", action="version", version=f"taskcheck {version('taskcheck')}")
 arg_parser.add_argument(
     "-v", "--verbose", action="store_true", help="Increase output verbosity."
 )
