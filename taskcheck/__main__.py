@@ -52,7 +52,7 @@ arg_parser.add_argument(
     dest="auto_adjust_urgency",
     action="store_false",
     default=True,
-    help="Disable automatic reduction of urgency weight when tasks cannot be completed on time. (Enabled by default, meaning automatic reduction will occur.)",
+    help="Disable automatic per-task urgency adjustment when tasks cannot be completed on time.",
 )
 arg_parser.add_argument(
     "--add-google-calendar",

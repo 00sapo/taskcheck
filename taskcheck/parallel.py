@@ -111,6 +111,7 @@ def check_tasks_parallel(
     urgency_coefficients = get_urgency_coefficients(taskrc=taskrc)
 
     current_weight = initial_weight_urgency
+    frozen_weights = {}
 
     # Always re-initialize task_info inside the loop to avoid mutated state
     task_info_original = initialize_task_info(
@@ -132,6 +133,7 @@ def check_tasks_parallel(
                 urgency_coefficients,
                 verbose,
                 current_weight,
+                frozen_weights,
             )
 
         # Check if any tasks cannot be completed on time
@@ -159,7 +161,9 @@ def check_tasks_parallel(
         if not tasks_overdue or not auto_adjust_urgency:
             break
 
-        # If we have overdue tasks and auto-adjust is enabled, reduce weight and try again
+        for task in tasks_overdue:
+            frozen_weights.setdefault(task["uuid"], current_weight)
+
         if verbose:
             console.print(
                 f"[red]{len(tasks_overdue)} task(s) cannot be completed on time[/red]"
@@ -175,12 +179,12 @@ def check_tasks_parallel(
         if tasks_overdue:
             # We tried to adjust but still have overdue tasks
             console.print(
-                "[red]Warning: cannot find a solution even with urgency weight 0.0[/red]"
+                "[red]Warning: cannot find a solution after per-task urgency adjustment[/red]"
             )
         else:
             # We successfully resolved overdue tasks by adjusting weight
             console.print(
-                f"[green]Final urgency weight: {max(current_weight, 0.0):.1f}[/green]"
+                f"[green]Resolved deadlines with per-task urgency adjustment[/green]"
             )
 
     if dry_run:
@@ -275,6 +279,7 @@ def allocate_time_for_day(
     urgency_coefficients,
     verbose,
     weight_urgency,
+    frozen_weights=None,
 ):
     date = datetime.today().date() + timedelta(days=day_offset)
     total_available_hours = compute_total_available_hours(task_info, day_offset)
@@ -287,7 +292,13 @@ def allocate_time_for_day(
     tasks_remaining = prepare_tasks_remaining(task_info, day_offset)
 
     while day_remaining_hours > 0 and tasks_remaining:
-        recompute_urgencies(tasks_remaining, urgency_coefficients, date, weight_urgency)
+        recompute_urgencies(
+            tasks_remaining,
+            urgency_coefficients,
+            date,
+            weight_urgency,
+            frozen_weights,
+        )
         sorted_task_ids = sorted(
             tasks_remaining.keys(),
             key=lambda x: tasks_remaining[x]["urgency"],
@@ -423,8 +434,11 @@ def update_urgency(info, urgency_key, urgency_compute_fn, urgency_coefficients, 
     info["urgency"] = info["urgency"] - old_urgency + urgency_value
 
 
-def recompute_urgencies(tasks_remaining, urgency_coefficients, date, weight_urgency):
-    """Recompute urgency simulating that today is `date`"""
+def recompute_urgencies(
+    tasks_remaining, urgency_coefficients, date, weight_urgency, frozen_weights=None
+):
+    """Recompute urgency simulating that today is `date`."""
+    frozen_weights = frozen_weights or {}
     # Recompute estimated urgencies as before
     for info in tasks_remaining.values():
         # Update estimated urgency
@@ -438,7 +452,8 @@ def recompute_urgencies(tasks_remaining, urgency_coefficients, date, weight_urge
 
         # Apply weights to create a combined score
         base_urgency = info["urgency"] - info["due_urgency"]
-        base_urgency *= weight_urgency
+        task_weight = frozen_weights.get(info["task"]["uuid"], weight_urgency)
+        base_urgency *= task_weight
         # Always add due_urgency, only weight estimated and age
         weighted_urgency = base_urgency + info["due_urgency"]
         info["urgency"] = weighted_urgency

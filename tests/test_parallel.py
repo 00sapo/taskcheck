@@ -287,6 +287,32 @@ class TestWeightConfiguration:
         recompute_urgencies(tasks_remaining, coeffs, date, 0.7)
         assert tasks_remaining["task-1"]["urgency"] >= tasks_remaining["task-1"]["due_urgency"]
 
+    def test_recompute_urgencies_uses_frozen_weight_per_task(self):
+        tasks_remaining = {
+            uuid: {
+                "task": {"uuid": uuid, "id": index, "entry": "20240101T000000Z"},
+                "urgency": 10.0,
+                "estimated_urgency": 5.0,
+                "due_urgency": 0.0,
+                "age_urgency": 0.0,
+                "remaining_hours": 2.0,
+                "started": False,
+            }
+            for index, uuid in enumerate(("frozen", "unfrozen"), start=1)
+        }
+        coeffs = UrgencyCoefficients({"P2H": 5.0}, False, 0, 365, 0, 0)
+
+        recompute_urgencies(
+            tasks_remaining,
+            coeffs,
+            datetime(2024, 1, 1).date(),
+            0.2,
+            frozen_weights={"frozen": 0.7},
+        )
+
+        assert tasks_remaining["frozen"]["urgency"] == 7.0
+        assert tasks_remaining["unfrozen"]["urgency"] == 2.0
+
     def test_recompute_urgencies_inherit_and_cycle(self):
         tasks_remaining = {
             "a": {"task": {"uuid": "a", "depends": ["b"]}, "urgency": 1.0, "estimated_urgency": 0.0, "due_urgency": 0.0, "age_urgency": 0.0, "remaining_hours": 1.0, "started": False},
@@ -503,7 +529,7 @@ class TestAutoAdjustUrgency:
         with patch("taskcheck.parallel.console.print") as mock_console_print:
             check_tasks_parallel(sample_config, verbose=True, taskrc=test_taskrc, auto_adjust_urgency=True)
             messages = [" ".join(str(arg).lower() for arg in call.args) for call in mock_console_print.call_args_list]
-            assert any("final urgency weight" in msg or "cannot find a solution" in msg for msg in messages)
+            assert any("per-task urgency adjustment" in msg for msg in messages)
 
     @patch("taskcheck.parallel.get_calendars")
     @patch("taskcheck.parallel.get_tasks")

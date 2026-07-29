@@ -89,7 +89,7 @@ For `today`, taskcheck skips past hours.
 
 The default work chunk is 2 hours (or less if the task is shorter); you can tune it with the Taskwarrior UDA `min_block`.
 
-If any task would finish after its `due_date`, taskcheck reduces `weight_urgency` by 0.1 and retries until deadlines are respected or the weight reaches 0.
+If a task would finish after its `due_date`, taskcheck retries. It keeps that task's current non-due urgency weight, then lowers the weight by 0.1 only for tasks that have not missed a deadline. Due urgency is never reduced. Retries stop when deadlines are respected or unflagged tasks reach a weight of 0.
 
 ## Tips and Tricks
 

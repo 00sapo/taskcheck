@@ -33,7 +33,7 @@ tuesday = [[9, 12.30], [14, 17]]
 
 ### `[scheduler]`
 - `days_ahead`: how far ahead to search for slots
-- `weight_urgency`: urgency weight used by scheduling; override with `--urgency-weight`
+- `weight_urgency`: initial multiplier for non-due urgency used by scheduling; override with `--urgency-weight`. Automatic adjustment freezes the weight of a task once it misses a deadline, then lowers it only for unflagged tasks; due urgency is never multiplied.
 
 ### `[calendars.<name>]`
 Blocks unavailable time from iCal / Google Calendar.
@@ -91,9 +91,9 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - `-s`, `--schedule`: run scheduling and write results back
 - `-f`, `--force-update`: refresh calendars, ignoring cache
 - `--taskrc TASKRC`: use a custom TASKRC directory
-- `--urgency-weight FLOAT`: override scheduler urgency weight
+- `--urgency-weight FLOAT`: override the initial non-due urgency weight
 - `--dry-run`: preview scheduling without modifying Taskwarrior
-- `--no-auto-adjust-urgency`: disable automatic urgency reduction when deadlines cannot be met
+- `--no-auto-adjust-urgency`: disable per-task automatic urgency adjustment when deadlines cannot be met
 - `--add-google-calendar`: authenticate with Google and print a ready-to-paste config block
 
 ## Common flows
