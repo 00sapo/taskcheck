@@ -33,7 +33,9 @@ tuesday = [[9, 12.30], [14, 17]]
 
 ### `[scheduler]`
 - `days_ahead`: how far ahead to search for slots
-- `weight_urgency`: initial multiplier for non-due urgency used by scheduling; override with `--urgency-weight`. Automatic adjustment freezes the weight of a task once it misses a deadline, then lowers it only for unflagged tasks; due urgency is never multiplied.
+- `weight_urgency`: multiplier for non-due urgency used by the baseline schedule; override with `--urgency-weight`. Due urgency is never multiplied.
+- `urgency_epsilon`: positive increment used to move an overdue task immediately above the next task in the descending total-urgency ranking (default: `0.1`)
+- `max_top_urgency_rounds`: number of additional epsilon retries after an overdue task reaches rank 1 (default: `10`); one final retry uses total urgency `1000`
 
 ### `[calendars.<name>]`
 Blocks unavailable time from iCal / Google Calendar.

@@ -33,6 +33,8 @@ def sample_config():
         "scheduler": {
             "days_ahead": 7,
             "weight_urgency": 1.0,
+            "urgency_epsilon": 0.1,
+            "max_top_urgency_rounds": 10,
             "weight_due_date": 0.0
         },
         "calendars": {

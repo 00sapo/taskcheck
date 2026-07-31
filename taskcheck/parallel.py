@@ -27,6 +27,58 @@ class UrgencyCoefficients:
     urgency_age: float
 
 
+def advance_urgency_override(
+    tasks_overdue,
+    task_info,
+    urgency_overrides,
+    adjustment_states,
+    epsilon,
+    max_top_rounds,
+):
+    def effective_urgency(task_uuid):
+        return urgency_overrides.get(
+            task_uuid,
+            float(
+                task_info[task_uuid]["task"].get(
+                    "urgency", task_info[task_uuid]["urgency"]
+                )
+            ),
+        )
+
+    overdue_uuids = sorted(
+        (task["uuid"] for task in tasks_overdue),
+        key=effective_urgency,
+        reverse=True,
+    )
+    for task_uuid in overdue_uuids:
+        state = adjustment_states.setdefault(
+            task_uuid,
+            {"top_rounds": 0, "fallback_used": False, "exhausted": False},
+        )
+        if state["exhausted"]:
+            continue
+        if state["fallback_used"]:
+            state["exhausted"] = True
+            continue
+
+        current_urgency = effective_urgency(task_uuid)
+        greater_urgencies = [
+            effective_urgency(uuid)
+            for uuid in task_info
+            if uuid != task_uuid and effective_urgency(uuid) > current_urgency
+        ]
+        if greater_urgencies:
+            urgency_overrides[task_uuid] = min(greater_urgencies) + epsilon
+        elif state["top_rounds"] < max_top_rounds:
+            urgency_overrides[task_uuid] = current_urgency + epsilon
+            state["top_rounds"] += 1
+        else:
+            urgency_overrides[task_uuid] = 1000.0
+            state["fallback_used"] = True
+        return task_uuid
+    return None
+
+
 def get_urgency_coefficients(taskrc=None):
     """
     Retrieves urgency coefficients from Taskwarrior configurations.
@@ -110,21 +162,22 @@ def check_tasks_parallel(
     calendars = get_calendars(config, verbose=verbose, force_update=force_update)
     urgency_coefficients = get_urgency_coefficients(taskrc=taskrc)
 
-    current_weight = initial_weight_urgency
-    frozen_weights = {}
+    urgency_epsilon = float(config["scheduler"].get("urgency_epsilon", 0.1))
+    max_top_rounds = int(config["scheduler"].get("max_top_urgency_rounds", 10))
+    if urgency_epsilon <= 0:
+        raise ValueError("scheduler.urgency_epsilon must be greater than 0")
+    if max_top_rounds < 0:
+        raise ValueError("scheduler.max_top_urgency_rounds must be at least 0")
 
-    # Always re-initialize task_info inside the loop to avoid mutated state
+    urgency_overrides = {}
+    adjustment_states = {}
+    adjusted = False
     task_info_original = initialize_task_info(
         tasks, time_maps, days_ahead, urgency_coefficients, calendars
     )
     task_info = copy.deepcopy(task_info_original)
     tasks_overdue = []
-    while current_weight >= 0.0:
-        if verbose and auto_adjust_urgency and current_weight < initial_weight_urgency:
-            console.print(
-                f"[yellow]Retrying with urgency weight: {current_weight:.1f}[/yellow]"
-            )
-
+    while True:
         task_info = copy.deepcopy(task_info_original)
         for day_offset in range(days_ahead):
             allocate_time_for_day(
@@ -132,59 +185,59 @@ def check_tasks_parallel(
                 day_offset,
                 urgency_coefficients,
                 verbose,
-                current_weight,
-                frozen_weights,
+                initial_weight_urgency,
+                urgency_overrides,
             )
 
-        # Check if any tasks cannot be completed on time
         tasks_overdue = []
         for info in task_info.values():
             task = info["task"]
             due = task.get("due")
+            if due is None:
+                continue
 
-            if due is not None:
-                due_dt = datetime.strptime(due, "%Y%m%dT%H%M%SZ")
-
-                # Case 1: Task has no scheduling at all and has remaining hours
-                if not info["scheduling"] and info["remaining_hours"] > 0:
+            due_dt = datetime.strptime(due, "%Y%m%dT%H%M%SZ")
+            if not info["scheduling"] and info["remaining_hours"] > 0:
+                tasks_overdue.append(task)
+            elif info["scheduling"]:
+                end_date = max(info["scheduling"])
+                end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
+                if end_date_dt > due_dt:
                     tasks_overdue.append(task)
-                # Case 2: Task is scheduled but completion date is after due date
-                elif info["scheduling"]:
-                    scheduled_dates = sorted(info["scheduling"].keys())
-                    if scheduled_dates:
-                        end_date = scheduled_dates[-1]
-                        end_date_dt = datetime.strptime(end_date, "%Y-%m-%d")
-                        if end_date_dt > due_dt:
-                            tasks_overdue.append(task)
 
-        # If no tasks are overdue or auto-adjust is disabled, break the loop
         if not tasks_overdue or not auto_adjust_urgency:
             break
-
-        for task in tasks_overdue:
-            frozen_weights.setdefault(task["uuid"], current_weight)
 
         if verbose:
             console.print(
                 f"[red]{len(tasks_overdue)} task(s) cannot be completed on time[/red]"
             )
 
-        current_weight = round(current_weight - 0.1, 1)
-
-        if current_weight < 0.0:
+        adjusted_uuid = advance_urgency_override(
+            tasks_overdue,
+            task_info,
+            urgency_overrides,
+            adjustment_states,
+            urgency_epsilon,
+            max_top_rounds,
+        )
+        if adjusted_uuid is None:
             break
+        adjusted = True
+        if verbose:
+            console.print(
+                f"[yellow]Retrying task {task_info[adjusted_uuid]['task']['id']} "
+                f"with total urgency {urgency_overrides[adjusted_uuid]:.2f}[/yellow]"
+            )
 
-    # After loop completes, check if we still have overdue tasks
-    if auto_adjust_urgency and current_weight < initial_weight_urgency:
+    if adjusted:
         if tasks_overdue:
-            # We tried to adjust but still have overdue tasks
             console.print(
                 "[red]Warning: cannot find a solution after per-task urgency adjustment[/red]"
             )
         else:
-            # We successfully resolved overdue tasks by adjusting weight
             console.print(
-                f"[green]Resolved deadlines with per-task urgency adjustment[/green]"
+                "[green]Resolved deadlines with per-task urgency adjustment[/green]"
             )
 
     if dry_run:
@@ -279,7 +332,7 @@ def allocate_time_for_day(
     urgency_coefficients,
     verbose,
     weight_urgency,
-    frozen_weights=None,
+    urgency_overrides=None,
 ):
     date = datetime.today().date() + timedelta(days=day_offset)
     total_available_hours = compute_total_available_hours(task_info, day_offset)
@@ -297,7 +350,7 @@ def allocate_time_for_day(
             urgency_coefficients,
             date,
             weight_urgency,
-            frozen_weights,
+            urgency_overrides,
         )
         sorted_task_ids = sorted(
             tasks_remaining.keys(),
@@ -435,10 +488,10 @@ def update_urgency(info, urgency_key, urgency_compute_fn, urgency_coefficients, 
 
 
 def recompute_urgencies(
-    tasks_remaining, urgency_coefficients, date, weight_urgency, frozen_weights=None
+    tasks_remaining, urgency_coefficients, date, weight_urgency, urgency_overrides=None
 ):
     """Recompute urgency simulating that today is `date`."""
-    frozen_weights = frozen_weights or {}
+    urgency_overrides = urgency_overrides or {}
     # Recompute estimated urgencies as before
     for info in tasks_remaining.values():
         # Update estimated urgency
@@ -452,8 +505,7 @@ def recompute_urgencies(
 
         # Apply weights to create a combined score
         base_urgency = info["urgency"] - info["due_urgency"]
-        task_weight = frozen_weights.get(info["task"]["uuid"], weight_urgency)
-        base_urgency *= task_weight
+        base_urgency *= weight_urgency
         # Always add due_urgency, only weight estimated and age
         weighted_urgency = base_urgency + info["due_urgency"]
         info["urgency"] = weighted_urgency
@@ -496,6 +548,10 @@ def recompute_urgencies(
             visited = {}  # Reset visited dictionary for each task
             max_urgency = get_max_urgency(info, visited)
             info["urgency"] = max_urgency  # Update the task's urgency
+
+    for task_uuid, urgency in urgency_overrides.items():
+        if task_uuid in tasks_remaining:
+            tasks_remaining[task_uuid]["urgency"] = urgency
 
 
 def allocate_time_to_task(info, day_offset, day_remaining_hours):

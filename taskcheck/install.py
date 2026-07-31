@@ -14,6 +14,8 @@ friday = [[9, 12.30], [14, 17]]
 [scheduler]
 days_ahead = 365
 weight_urgency = 1.0
+urgency_epsilon = 0.1
+max_top_urgency_rounds = 10
 
 [report]
 include_unplanned = true

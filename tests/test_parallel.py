@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
+import pytest
+
 from taskcheck.parallel import (
     get_urgency_coefficients,
     check_tasks_parallel,
@@ -10,6 +12,7 @@ from taskcheck.parallel import (
     urgency_age,
     urgency_estimated,
     recompute_urgencies,
+    advance_urgency_override,
     UrgencyCoefficients,
 )
 
@@ -287,10 +290,10 @@ class TestWeightConfiguration:
         recompute_urgencies(tasks_remaining, coeffs, date, 0.7)
         assert tasks_remaining["task-1"]["urgency"] >= tasks_remaining["task-1"]["due_urgency"]
 
-    def test_recompute_urgencies_uses_frozen_weight_per_task(self):
+    def test_recompute_urgencies_applies_total_urgency_override(self):
         tasks_remaining = {
-            uuid: {
-                "task": {"uuid": uuid, "id": index, "entry": "20240101T000000Z"},
+            "overridden": {
+                "task": {"uuid": "overridden", "id": 1, "entry": "20240101T000000Z"},
                 "urgency": 10.0,
                 "estimated_urgency": 5.0,
                 "due_urgency": 0.0,
@@ -298,7 +301,6 @@ class TestWeightConfiguration:
                 "remaining_hours": 2.0,
                 "started": False,
             }
-            for index, uuid in enumerate(("frozen", "unfrozen"), start=1)
         }
         coeffs = UrgencyCoefficients({"P2H": 5.0}, False, 0, 365, 0, 0)
 
@@ -307,11 +309,10 @@ class TestWeightConfiguration:
             coeffs,
             datetime(2024, 1, 1).date(),
             0.2,
-            frozen_weights={"frozen": 0.7},
+            urgency_overrides={"overridden": 42.1},
         )
 
-        assert tasks_remaining["frozen"]["urgency"] == 7.0
-        assert tasks_remaining["unfrozen"]["urgency"] == 2.0
+        assert tasks_remaining["overridden"]["urgency"] == 42.1
 
     def test_recompute_urgencies_inherit_and_cycle(self):
         tasks_remaining = {
@@ -353,6 +354,60 @@ class TestMainSchedulingFunction:
 
 
 class TestAutoAdjustUrgency:
+    def test_urgency_override_moves_up_one_rank_then_uses_bounded_top_rounds(self):
+        task_info = {
+            "t1": {"task": {"uuid": "t1"}, "urgency": 1.0},
+            "t2": {"task": {"uuid": "t2"}, "urgency": 2.0},
+            "t3": {"task": {"uuid": "t3"}, "urgency": 3.0},
+        }
+        overdue = [task_info["t1"]["task"]]
+        overrides = {}
+        states = {}
+        values = []
+
+        for _ in range(5):
+            adjusted_uuid = advance_urgency_override(
+                overdue, task_info, overrides, states, epsilon=0.1, max_top_rounds=2
+            )
+            values.append(overrides["t1"])
+            task_info["t1"]["urgency"] = overrides["t1"]
+
+        assert adjusted_uuid == "t1"
+        assert values == pytest.approx([2.1, 3.1, 3.2, 3.3, 1000.0])
+        assert (
+            advance_urgency_override(
+                overdue, task_info, overrides, states, epsilon=0.1, max_top_rounds=2
+            )
+            is None
+        )
+
+    def test_exhausted_task_does_not_block_other_overdue_tasks(self):
+        task_info = {
+            "t1": {"task": {"uuid": "t1"}, "urgency": 1000.0},
+            "t2": {"task": {"uuid": "t2"}, "urgency": 1.0},
+            "t3": {"task": {"uuid": "t3"}, "urgency": 2.0},
+        }
+        overrides = {"t1": 1000.0}
+        states = {}
+        overdue = [task_info["t1"]["task"], task_info["t2"]["task"]]
+
+        for _ in range(3):
+            advance_urgency_override(
+                [task_info["t1"]["task"]],
+                task_info,
+                overrides,
+                states,
+                epsilon=0.1,
+                max_top_rounds=1,
+            )
+
+        adjusted_uuid = advance_urgency_override(
+            overdue, task_info, overrides, states, epsilon=0.1, max_top_rounds=1
+        )
+
+        assert adjusted_uuid == "t2"
+        assert overrides["t2"] == 2.1
+
     @patch("taskcheck.parallel.get_calendars")
     @patch("taskcheck.parallel.get_tasks")
     @patch("taskcheck.parallel.get_urgency_coefficients")
@@ -366,7 +421,7 @@ class TestAutoAdjustUrgency:
         sample_config,
         test_taskrc,
     ):
-        """Test that auto-adjust reduces urgency weight when tasks are overdue."""
+        """Test that auto-adjust retries when tasks are overdue."""
         # Create tasks with tight deadlines that will cause conflicts
         overdue_tasks = [
             {
@@ -437,7 +492,7 @@ class TestAutoAdjustUrgency:
     @patch("taskcheck.parallel.get_urgency_coefficients")
     @patch("taskcheck.parallel.get_long_range_time_map")
     @patch("taskcheck.parallel.update_tasks_with_scheduling_info")
-    def test_auto_adjust_urgency_weight_reduction(
+    def test_auto_adjust_urgency_stops_after_fallback(
         self,
         mock_update,
         mock_long_range,
@@ -447,7 +502,7 @@ class TestAutoAdjustUrgency:
         sample_config,
         test_taskrc,
     ):
-        """Test that auto_adjust_urgency reduces the urgency weight and stops at 0.0."""
+        """Test that auto-adjust stops after bounded rank-1 and fallback retries."""
         # Use relative dates based on current date
         from datetime import datetime, timedelta
 
@@ -476,10 +531,9 @@ class TestAutoAdjustUrgency:
             {"P24H": 10.0}, False, 4.0, 365, 12, 2
         )
         mock_calendars.return_value = []
-        # Mock no available time at all to make it truly impossible
         mock_long_range.return_value = ([0.0] * 365, 0.0)
+        sample_config["scheduler"]["max_top_urgency_rounds"] = 2
 
-        # Patch the console.print to capture output
         with patch("taskcheck.parallel.console.print") as mock_console_print:
             check_tasks_parallel(
                 sample_config,
@@ -488,25 +542,21 @@ class TestAutoAdjustUrgency:
                 auto_adjust_urgency=True,
             )
 
-            # Should print a warning about not finding a solution
-            # Print all captured calls for debugging if the assertion fails
-            found_warning = any(
-                "cannot find a solution"
-                in " ".join(str(arg).lower() for arg in call.args)
+            messages = [
+                " ".join(str(arg).lower() for arg in call.args)
                 for call in mock_console_print.call_args_list
-            )
-            if not found_warning:
-                print("Captured console.print calls for debug:")
-                for call in mock_console_print.call_args_list:
-                    print(str(call))
-            assert found_warning
+            ]
+            retries = [message for message in messages if "retrying task" in message]
+            assert len(retries) == 3
+            assert "1000.00" in retries[-1]
+            assert any("cannot find a solution" in message for message in messages)
 
     @patch("taskcheck.parallel.get_calendars")
     @patch("taskcheck.parallel.get_tasks")
     @patch("taskcheck.parallel.get_urgency_coefficients")
     @patch("taskcheck.parallel.get_long_range_time_map")
     @patch("taskcheck.parallel.update_tasks_with_scheduling_info")
-    def test_auto_adjust_urgency_final_weight_message(
+    def test_auto_adjust_urgency_final_message(
         self,
         mock_update,
         mock_long_range,
