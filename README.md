@@ -75,11 +75,10 @@ In short:
 - it installs required Taskwarrior settings if you confirm the first prompt
 - it installs optional urgency/report tuning if you confirm the second prompt
 - it can also create the default config file if you confirm the third prompt
-- it does **not** schedule tasks or fetch calendars
 - scheduling happens with `taskcheck --schedule`
 - all flags/config keys/settings are documented in `REFERENCE.md`
 
-## Algorithm
+## They say it's an AI
 
 The algorithm simulates a workday one chunk at a time.
 
