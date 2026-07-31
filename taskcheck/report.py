@@ -182,7 +182,7 @@ def get_tasks(config, tasks, year, month, day):
     regex = re.compile(rf"{year:04d}-{month:02d}-{day:02d} - ([PDTHM0-9]+)")
     valid_tasks = []
     for task in tasks:
-        for line in task["scheduling"].split("\n"):
+        for line in task.get("scheduling", "").split("\n"):
             m = regex.match(line)
             if m:
                 due = task.get("due", "")

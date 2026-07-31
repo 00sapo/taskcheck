@@ -89,6 +89,17 @@ class TestTaskFiltering:
         
         assert len(result) == 2
         assert result[0]["urgency"] >= result[1]["urgency"]  # Sorted by urgency
+
+    def test_get_tasks_ignores_tasks_without_scheduling(self, sample_config):
+        result = get_tasks(
+            sample_config["report"],
+            [{"id": 1, "description": "Unplanned task", "urgency": 10.0}],
+            2023,
+            12,
+            5,
+        )
+
+        assert result == []
         
     @patch('subprocess.run')
     def test_get_unplanned_tasks(self, mock_run, sample_config, test_taskrc):
