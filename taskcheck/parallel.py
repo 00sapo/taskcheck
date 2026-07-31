@@ -4,6 +4,8 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from rich.table import Table
+
 from taskcheck.undo import create_undo_backup
 from taskcheck.common import (
     AVOID_STATUS,
@@ -237,13 +239,6 @@ def check_tasks_parallel(
             original = task_info_original[uuid]["urgency"]
             if override != original:
                 changed_tasks.append((uuid, override - original, original, override))
-        for uuid, delta, original, override in sorted(
-            changed_tasks, key=lambda item: item[1], reverse=True
-        ):
-            task = task_info_original[uuid]["task"]
-            console.print(
-                f"[yellow]#{task['id']} {task['description']} (+{delta:.2f}, {original:.2f}→{override:.2f})[/yellow]"
-            )
         if tasks_overdue:
             console.print(
                 "[red]Warning: cannot find a solution after per-task urgency adjustment[/red]"
@@ -252,6 +247,27 @@ def check_tasks_parallel(
             console.print(
                 "[green]Resolved deadlines with per-task urgency adjustment[/green]"
             )
+        if changed_tasks:
+            console.print(
+                "[yellow]Scheduling priority was increased for these tasks. "
+                "Difference is final overridden urgency minus original urgency.[/yellow]"
+            )
+            table = Table(header_style="bold yellow", style="yellow")
+            table.add_column("Task")
+            table.add_column("Original urgency", justify="right")
+            table.add_column("Overridden urgency", justify="right")
+            table.add_column("Difference", justify="right")
+            for uuid, delta, original, override in sorted(
+                changed_tasks, key=lambda item: item[1], reverse=True
+            ):
+                task = task_info_original[uuid]["task"]
+                table.add_row(
+                    f"#{task['id']} {task['description']}",
+                    f"{original:.2f}",
+                    f"{override:.2f}",
+                    f"+{delta:.2f}",
+                )
+            console.print(table)
 
     if dry_run:
         # Generate JSON output instead of updating tasks

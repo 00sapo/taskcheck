@@ -592,11 +592,28 @@ class TestAutoAdjustUrgency:
         mock_long_range.return_value = ([4.0] * 7, 0.0)
         with patch("taskcheck.parallel.console.print") as mock_console_print:
             check_tasks_parallel(sample_config, verbose=True, taskrc=test_taskrc, auto_adjust_urgency=True)
-            messages = [" ".join(str(arg).lower() for arg in call.args) for call in mock_console_print.call_args_list]
-            yellow = [message for message in messages if message.startswith("[yellow]#")]
-            assert any("per-task urgency adjustment" in msg for msg in messages)
-            diffs = [float(message.split("(+")[1].split(",")[0]) for message in yellow]
-            assert diffs == sorted(diffs, reverse=True)
+            calls = mock_console_print.call_args_list
+            messages = [" ".join(str(arg).lower() for arg in call.args) for call in calls]
+            warning_index = next(
+                index
+                for index, message in enumerate(messages)
+                if "per-task urgency adjustment" in message
+            )
+            intro_index = next(
+                index
+                for index, message in enumerate(messages)
+                if "difference is final overridden urgency" in message
+            )
+            table = calls[intro_index + 1].args[0]
+            assert warning_index < intro_index
+            assert [column.header for column in table.columns] == [
+                "Task",
+                "Original urgency",
+                "Overridden urgency",
+                "Difference",
+            ]
+            differences = [float(value) for value in table.columns[-1]._cells]
+            assert differences == sorted(differences, reverse=True)
 
     @patch("taskcheck.parallel.get_calendars")
     @patch("taskcheck.parallel.get_tasks")
