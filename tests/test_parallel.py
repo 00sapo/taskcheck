@@ -593,7 +593,10 @@ class TestAutoAdjustUrgency:
         with patch("taskcheck.parallel.console.print") as mock_console_print:
             check_tasks_parallel(sample_config, verbose=True, taskrc=test_taskrc, auto_adjust_urgency=True)
             messages = [" ".join(str(arg).lower() for arg in call.args) for call in mock_console_print.call_args_list]
+            yellow = [message for message in messages if message.startswith("[yellow]#")]
             assert any("per-task urgency adjustment" in msg for msg in messages)
+            diffs = [float(message.split("(+")[1].split(",")[0]) for message in yellow]
+            assert diffs == sorted(diffs, reverse=True)
 
     @patch("taskcheck.parallel.get_calendars")
     @patch("taskcheck.parallel.get_tasks")

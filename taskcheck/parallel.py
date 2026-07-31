@@ -232,6 +232,18 @@ def check_tasks_parallel(
             )
 
     if adjusted:
+        changed_tasks = []
+        for uuid, override in urgency_overrides.items():
+            original = task_info_original[uuid]["urgency"]
+            if override != original:
+                changed_tasks.append((uuid, override - original, original, override))
+        for uuid, delta, original, override in sorted(
+            changed_tasks, key=lambda item: item[1], reverse=True
+        ):
+            task = task_info_original[uuid]["task"]
+            console.print(
+                f"[yellow]#{task['id']} {task['description']} (+{delta:.2f}, {original:.2f}→{override:.2f})[/yellow]"
+            )
         if tasks_overdue:
             console.print(
                 "[red]Warning: cannot find a solution after per-task urgency adjustment[/red]"
