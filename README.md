@@ -18,6 +18,7 @@ Use it if you want to:
 - 🧭 Support complex working-hour maps
 - ⏱️ Consider urgency, due dates, and dependencies
 - 🧪 Dry-run mode to preview changes
+- ↩️ Undo the latest schedule update
 - 🧠 Auto-adjust urgency when deadlines cannot be met
 - 🔄 Force-refresh iCal calendars
 - 📊 Custom reports for planned and unplanned tasks
@@ -31,6 +32,7 @@ Use it if you want to:
 3. add `estimated` + `time_map` UDAs
 4. edit `~/.config/task/taskcheck.toml` (see [Reference](#Reference))
 5. `taskcheck --schedule`
+6. `taskcheck --undo` restores the scheduling fields changed by the latest run
 
 ## How it works
 
@@ -88,6 +90,8 @@ If urgency changes, the next task choice can change too.
 For `today`, taskcheck skips past hours.
 
 The default work chunk is 2 hours (or less if the task is shorter); you can tune it with the Taskwarrior UDA `min_block`.
+
+Before writing a schedule, taskcheck backs up the affected tasks' `scheduled`, `completion_date`, and `scheduling` fields under the Taskwarrior data directory. `taskcheck --undo` restores and consumes the newest backup. The `[scheduler]` option `n_undos` controls retention and defaults to `1`; set it to `0` to disable backups.
 
 If a task would finish after its due date, taskcheck retries with a total-urgency override. Each retry moves the task immediately above the task with the smallest greater urgency by adding `urgency_epsilon` (default: `0.1`). At rank 1, it adds epsilon for up to `max_top_urgency_rounds` retries (default: `10`), then tries once at urgency `1000`. If the task is still late, taskcheck stops raising it and optimizes the other overdue tasks.
 

@@ -36,6 +36,7 @@ tuesday = [[9, 12.30], [14, 17]]
 - `weight_urgency`: multiplier for non-due urgency used by the baseline schedule; override with `--urgency-weight`. Due urgency is never multiplied.
 - `urgency_epsilon`: positive increment used to move an overdue task immediately above the next task in the descending total-urgency ranking (default: `0.1`)
 - `max_top_urgency_rounds`: number of additional epsilon retries after an overdue task reaches rank 1 (default: `10`); one final retry uses total urgency `1000`
+- `n_undos`: maximum number of schedule backups retained under `<Taskwarrior data>/taskcheck/undos` (default: `1`); `0` disables backups
 
 ### `[calendars.<name>]`
 Blocks unavailable time from iCal / Google Calendar.
@@ -91,6 +92,7 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - `-i`, `--install`: install Taskwarrior settings + default config
 - `-r`, `--report REPORT`: render a report up to the given Taskwarrior date spec
 - `-s`, `--schedule`: run scheduling and write results back
+- `--undo`: restore the scheduling fields from the newest backup and consume it
 - `-f`, `--force-update`: refresh calendars, ignoring cache
 - `--taskrc TASKRC`: use a custom TASKRC directory
 - `--urgency-weight FLOAT`: override the initial non-due urgency weight
@@ -102,5 +104,6 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 
 - first install: `pipx install taskcheck && taskcheck --install`
 - schedule now: `taskcheck --schedule`
+- undo the latest schedule: `taskcheck --undo`
 - preview only: `taskcheck --schedule --dry-run`
 - report: `taskcheck --report today`

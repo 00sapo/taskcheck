@@ -17,6 +17,12 @@ from taskcheck.parallel import (
 )
 
 
+@pytest.fixture(autouse=True)
+def mock_undo_backup():
+    with patch("taskcheck.parallel.create_undo_backup") as mock_backup:
+        yield mock_backup
+
+
 class TestUrgencyCoefficients:
     def test_get_urgency_coefficients(self, mock_task_export_with_taskrc, test_taskrc):
         coeffs = get_urgency_coefficients(taskrc=test_taskrc)
@@ -329,8 +335,10 @@ class TestMainSchedulingFunction:
     @patch("taskcheck.parallel.get_tasks")
     @patch("taskcheck.parallel.get_urgency_coefficients")
     @patch("taskcheck.parallel.update_tasks_with_scheduling_info")
+    @patch("taskcheck.parallel.create_undo_backup")
     def test_check_tasks_parallel(
         self,
+        mock_backup,
         mock_update,
         mock_coeffs,
         mock_tasks,
@@ -344,13 +352,19 @@ class TestMainSchedulingFunction:
             {"P1H": 5.0, "P2H": 8.0, "P3H": 10.0}, False, 4.0, 365, 12, 2
         )
         mock_calendars.return_value = []
+        writes = []
+        mock_backup.side_effect = lambda *args: writes.append("backup")
+        mock_update.side_effect = lambda *args: writes.append("update")
 
         check_tasks_parallel(sample_config, verbose=True, taskrc=test_taskrc)
 
         mock_tasks.assert_called_once_with(taskrc=test_taskrc)
         mock_coeffs.assert_called_once_with(taskrc=test_taskrc)
         mock_calendars.assert_called_once()
+        mock_backup.assert_called_once()
+        assert mock_backup.call_args.args[1:] == (1, test_taskrc)
         mock_update.assert_called_once()
+        assert writes == ["backup", "update"]
 
 
 class TestAutoAdjustUrgency:
@@ -593,6 +607,7 @@ class TestAutoAdjustUrgency:
         mock_calendars,
         sample_config,
         test_taskrc,
+        mock_undo_backup,
     ):
         now = datetime.now()
         due = (now + timedelta(days=1)).strftime("%Y%m%dT%H%M%SZ")
@@ -605,6 +620,7 @@ class TestAutoAdjustUrgency:
         assert isinstance(result, list)
         assert result
         assert any("warning" in " ".join(str(a).lower() for a in call.args) for call in mock_print.call_args_list)
+        mock_undo_backup.assert_not_called()
 
     def test_update_tasks_with_scheduling_info_warns_when_late(self):
         task_info = {

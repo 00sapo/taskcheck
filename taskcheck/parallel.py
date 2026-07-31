@@ -4,6 +4,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
+from taskcheck.undo import create_undo_backup
 from taskcheck.common import (
     AVOID_STATUS,
     console,
@@ -285,7 +286,9 @@ def check_tasks_parallel(
 
         return scheduling_results
     else:
-        # Normal operation - update tasks in Taskwarrior
+        create_undo_backup(
+            task_info, config["scheduler"].get("n_undos", 1), taskrc
+        )
         update_tasks_with_scheduling_info(task_info, verbose, taskrc)
 
         return None

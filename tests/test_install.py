@@ -52,8 +52,9 @@ class TestIntegration:
     
     @patch('taskcheck.parallel.get_calendars')
     @patch('taskcheck.parallel.get_tasks') 
+    @patch('taskcheck.parallel.create_undo_backup')
     @patch('subprocess.run')
-    def test_full_scheduling_workflow(self, mock_run, mock_tasks, mock_calendars, sample_config, sample_tasks):
+    def test_full_scheduling_workflow(self, mock_run, mock_backup, mock_tasks, mock_calendars, sample_config, sample_tasks):
         """Test the complete scheduling workflow."""
         mock_tasks.return_value = sample_tasks
         mock_calendars.return_value = []

@@ -16,6 +16,7 @@ days_ahead = 365
 weight_urgency = 1.0
 urgency_epsilon = 0.1
 max_top_urgency_rounds = 10
+n_undos = 1
 
 [report]
 include_unplanned = true

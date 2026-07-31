@@ -35,6 +35,7 @@ def sample_config():
             "weight_urgency": 1.0,
             "urgency_epsilon": 0.1,
             "max_top_urgency_rounds": 10,
+            "n_undos": 1,
             "weight_due_date": 0.0
         },
         "calendars": {

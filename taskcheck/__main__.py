@@ -29,6 +29,11 @@ arg_parser.add_argument(
     help="Perform the scheduling algorithm, giving a schedule and a scheduling UDA and alerting for not completable tasks.",
 )
 arg_parser.add_argument(
+    "--undo",
+    action="store_true",
+    help="Restore task scheduling fields from the most recent backup.",
+)
+arg_parser.add_argument(
     "-f",
     "--force-update",
     action="store_true",
@@ -105,6 +110,12 @@ def main():
         from taskcheck.install import install
 
         install()
+        return
+
+    if getattr(args, "undo", False) is True:
+        from taskcheck.undo import restore_latest_backup
+
+        restore_latest_backup(taskrc=args.taskrc)
         return
 
     if getattr(args, "add_google_calendar", False) is True:

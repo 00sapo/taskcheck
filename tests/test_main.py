@@ -15,6 +15,7 @@ class TestArgumentParsing:
         assert args.install is False
         assert args.report is None
         assert args.schedule is False
+        assert args.undo is False
         assert args.force_update is False
         assert args.taskrc is None
         assert args.urgency_weight is None
@@ -30,6 +31,7 @@ class TestArgumentParsing:
                 "-r",
                 "today",
                 "-s",
+                "--undo",
                 "-f",
                 "--taskrc",
                 "/custom/path",
@@ -42,6 +44,7 @@ class TestArgumentParsing:
         assert args.install is True
         assert args.report == "today"
         assert args.schedule is True
+        assert args.undo is True
         assert args.force_update is True
         assert args.taskrc == "/custom/path"
         assert args.urgency_weight == 0.7
@@ -106,6 +109,11 @@ class TestArgumentParsing:
             arg_parser.parse_args(["--version"])
 
         assert capsys.readouterr().out == f"taskcheck {version('taskcheck')}\n"
+
+
+    def test_undo_argument(self):
+        args = arg_parser.parse_args(["--undo"])
+        assert args.undo is True
 
 
 class TestConfigLoading:
@@ -174,6 +182,16 @@ class TestMainFunction:
                 main()
 
                 mock_install.assert_called_once()
+
+    @patch("taskcheck.undo.restore_latest_backup")
+    def test_main_undo_returns_before_scheduling(self, mock_restore):
+        with patch(
+            "sys.argv",
+            ["taskcheck", "--undo", "--schedule", "--taskrc", "/custom/task"],
+        ):
+            main()
+
+        mock_restore.assert_called_once_with(taskrc="/custom/task")
 
     @patch("taskcheck.__main__.load_config")
     @patch("taskcheck.__main__.check_tasks_parallel")
