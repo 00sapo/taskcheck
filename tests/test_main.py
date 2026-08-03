@@ -413,10 +413,11 @@ class TestMainFunction:
                     auto_adjust_urgency=True,
                 )
 
+    @patch("taskcheck.__main__.save_dry_run_results")
     @patch("taskcheck.__main__.load_config")
     @patch("taskcheck.__main__.check_tasks_parallel")
     def test_main_schedule_with_dry_run(
-        self, mock_check_tasks, mock_load_config, sample_config, test_taskrc
+        self, mock_check_tasks, mock_load_config, mock_save, sample_config, test_taskrc
     ):
         """Test that dry-run mode returns scheduling results without modifying tasks."""
         mock_load_config.return_value = sample_config
@@ -437,6 +438,7 @@ class TestMainFunction:
             }
         ]
         mock_check_tasks.return_value = dry_run_results
+        mock_save.return_value = None
 
         with patch(
             "sys.argv",
@@ -469,6 +471,7 @@ class TestMainFunction:
         )
         mock_load_config.assert_called_once()
 
+    @patch("taskcheck.__main__.save_dry_run_results")
     @patch("taskcheck.__main__.load_config")
     @patch("taskcheck.__main__.check_tasks_parallel")
     @patch("taskcheck.report.generate_report")
@@ -477,6 +480,7 @@ class TestMainFunction:
         mock_generate_report,
         mock_check_tasks,
         mock_load_config,
+        mock_save,
         sample_config,
         test_taskrc,
     ):
@@ -499,6 +503,7 @@ class TestMainFunction:
             }
         ]
         mock_check_tasks.return_value = dry_run_results
+        mock_save.return_value = None
 
         with patch(
             "sys.argv",
@@ -536,6 +541,7 @@ class TestMainFunction:
             taskrc=test_taskrc,
             scheduling_results=dry_run_results,
         )
+        mock_save.assert_called_once_with(dry_run_results, taskrc=test_taskrc)
 
         # Verify that check_tasks_parallel was called with dry_run=True
         mock_check_tasks.assert_called_once_with(
@@ -546,6 +552,43 @@ class TestMainFunction:
             urgency_weight_override=None,
             dry_run=True,
             auto_adjust_urgency=True,
+        )
+
+    @patch("taskcheck.__main__.load_dry_run_results")
+    @patch("taskcheck.__main__.load_config")
+    @patch("taskcheck.report.generate_report")
+    def test_main_report_dry_run_loads_cached_results(
+        self, mock_generate_report, mock_load_config, mock_load_cache, sample_config, test_taskrc
+    ):
+        mock_load_config.return_value = sample_config
+        cached = [{"id": "1", "scheduling": "2024-12-20 - PT2H"}]
+        mock_load_cache.return_value = cached
+
+        with patch("sys.argv", ["taskcheck", "--report", "today", "--dry-run", "--taskrc", test_taskrc]):
+            with patch("taskcheck.__main__.arg_parser.parse_args") as mock_parse:
+                mock_args = Mock()
+                mock_args.install = False
+                mock_args.schedule = False
+                mock_args.report = "today"
+                mock_args.timeline = None
+                mock_args.zoom = "auto"
+                mock_args.verbose = False
+                mock_args.force_update = False
+                mock_args.taskrc = test_taskrc
+                mock_args.urgency_weight = None
+                mock_args.dry_run = True
+                mock_args.auto_adjust_urgency = True
+                mock_parse.return_value = mock_args
+                main()
+
+        mock_load_cache.assert_called_once_with(test_taskrc)
+        mock_generate_report.assert_called_once_with(
+            sample_config,
+            "today",
+            False,
+            force_update=False,
+            taskrc=test_taskrc,
+            scheduling_results=cached,
         )
 
     @patch("taskcheck.__main__.load_config")

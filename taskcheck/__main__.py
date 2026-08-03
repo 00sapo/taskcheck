@@ -4,6 +4,7 @@ from importlib.metadata import version
 
 from taskcheck.parallel import check_tasks_parallel
 from taskcheck.common import config_dir
+from taskcheck.dry_run import load_dry_run_results, save_dry_run_results
 
 arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument("--version", action="version", version=f"taskcheck {version('taskcheck')}")
@@ -151,6 +152,8 @@ def main():
             config,
             **check_tasks_kwargs,
         )
+        if args.dry_run and result is not None:
+            save_dry_run_results(result, taskrc=args.taskrc)
         print_help = False
 
     if args.report:
@@ -158,9 +161,8 @@ def main():
 
         config = load_config()
         scheduling_results = None
-        if args.schedule and args.dry_run:
-            # If we just did a dry-run schedule, use those results
-            scheduling_results = result
+        if args.dry_run:
+            scheduling_results = result if args.schedule else load_dry_run_results(args.taskrc)
         generate_report(
             config,
             args.report,
@@ -176,6 +178,8 @@ def main():
         from taskcheck.timeline import generate_timeline
 
         scheduling_results = result if args.schedule and args.dry_run else None
+        if args.dry_run and scheduling_results is None:
+            scheduling_results = load_dry_run_results(args.taskrc)
         zoom = getattr(args, "zoom", "day")
         if zoom not in {"auto", "day", "week", "month"}:
             zoom = "auto"
