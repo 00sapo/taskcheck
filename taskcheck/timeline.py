@@ -1,6 +1,5 @@
 import colorsys
 import hashlib
-import os
 import re
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -13,6 +12,7 @@ from taskcheck.report import (
     get_taskwarrior_date,
     parse_taskwarrior_timestamp,
 )
+from taskcheck.theme import detect_theme
 
 SCHEDULING_DATE = re.compile(r"^(\d{4}-\d{2}-\d{2})\s+-\s+P")
 
@@ -25,22 +25,6 @@ class Period:
     width: int
 
 
-def detect_theme(environ=None, config=None):
-    environ = os.environ if environ is None else environ
-    config = config or {}
-    for key in ("TASKCHECK_THEME", "PI_THEME"):
-        value = environ.get(key, "").strip().lower()
-        if value in {"light", "dark"}:
-            return value
-    value = str(config.get("theme", "")).strip().lower()
-    if value in {"light", "dark"}:
-        return value
-    value = environ.get("COLORFGBG", "")
-    try:
-        background = int(value.split(";")[-1])
-    except ValueError:
-        return "dark"
-    return "light" if background >= 8 else "dark"
 
 
 def project_color(project, theme):

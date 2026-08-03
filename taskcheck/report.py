@@ -13,6 +13,8 @@ from rich.table import Table
 from rich.text import Text
 from rich.panel import Panel
 
+from taskcheck.theme import detect_theme
+
 from random_unicode_emoji import random_emoji
 
 
@@ -280,22 +282,23 @@ def get_unplanned_tasks(config, tasks, taskrc=None):
 
 
 def generate_report(config, constraint, verbose=False, force_update=False, taskrc=None, scheduling_results=None):
-    config = config["report"]
+    report_config = config["report"]
+    theme = detect_theme(config=config.get("timeline", {}))
     console = Console()
     
     original_tasks = fetch_tasks(taskrc)
     tasks = scheduling_results if scheduling_results is not None else original_tasks
 
-    if config.get("include_unplanned"):
-        unplanned_tasks = get_unplanned_tasks(config, original_tasks, taskrc=taskrc)
-        display_unplanned_tasks(console, config, unplanned_tasks)
+    if report_config.get("include_unplanned"):
+        unplanned_tasks = get_unplanned_tasks(report_config, original_tasks, taskrc=taskrc)
+        display_unplanned_tasks(console, report_config, unplanned_tasks, theme=theme)
 
     for year, month, day in get_days_in_constraint(constraint, taskrc=taskrc):
-        this_day_tasks = get_tasks(config, tasks, year, month, day)
+        this_day_tasks = get_tasks(report_config, tasks, year, month, day)
 
-        display_date_header(console, year, month, day)
+        display_date_header(console, year, month, day, theme=theme)
 
-        display_tasks_table(console, config, this_day_tasks)
+        display_tasks_table(console, report_config, this_day_tasks, theme=theme)
 
 
 def parse_taskwarrior_timestamp(value):
@@ -321,24 +324,26 @@ def fetch_tasks(taskrc=None):
     return json.loads(tasks.stdout)
 
 
-def display_date_header(console, year, month, day):
+def display_date_header(console, year, month, day, theme="dark"):
     """Display a date header with a calendar emoji."""
-    date_str = f":calendar: [bold cyan]{year}-{month}-{day}[/bold cyan]"
-    console.print(Panel(date_str, style="bold blue", expand=False))
+    accent = "cyan" if theme == "dark" else "blue"
+    date_str = f":calendar: [bold {accent}]{year}-{month}-{day}[/bold {accent}]"
+    console.print(Panel(date_str, style=f"bold {accent}", expand=False))
 
 
-def display_tasks_table(console, config, tasks):
+def display_tasks_table(console, config, tasks, theme="dark"):
     """Display a table of tasks for a specific day."""
     if tasks:
-        table = build_tasks_table(config, tasks)
+        table = build_tasks_table(config, tasks, theme=theme)
         console.print(table)
     else:
         console.print("[italic dim]No tasks scheduled for this day.[/italic dim]")
 
 
-def build_tasks_table(config, tasks):
+def build_tasks_table(config, tasks, theme="dark"):
     """Build a Rich table for displaying tasks."""
-    table = Table(show_header=True, header_style="bold blue")
+    header_style = "bold cyan" if theme == "dark" else "bold blue"
+    table = Table(show_header=True, header_style=header_style)
     table.add_column("Task", style="dim", width=12)
     table.add_column("Project", style="dim", width=12)
     table.add_column("Description")
@@ -388,11 +393,12 @@ def get_task_emoji(config, task):
     return emoji
 
 
-def display_unplanned_tasks(console, config, tasks):
+def display_unplanned_tasks(console, config, tasks, theme="dark"):
     """Display unplanned tasks if any are found."""
     if tasks:
-        table = build_unplanned_tasks_table(config, tasks)
-        console.print(Panel("Unplanned Tasks", style="bold blue", expand=False))
+        accent = "cyan" if theme == "dark" else "blue"
+        table = build_unplanned_tasks_table(config, tasks, theme=theme)
+        console.print(Panel("Unplanned Tasks", style=f"bold {accent}", expand=False))
         console.print(table)
     else:
         console.print(
@@ -404,9 +410,10 @@ def display_unplanned_tasks(console, config, tasks):
         )
 
 
-def build_unplanned_tasks_table(config, tasks):
+def build_unplanned_tasks_table(config, tasks, theme="dark"):
     """Build a Rich table for displaying unplanned tasks."""
-    table = Table(show_header=True, header_style="bold blue")
+    header_style = "bold cyan" if theme == "dark" else "bold blue"
+    table = Table(show_header=True, header_style=header_style)
     table.add_column("Task", style="dim", width=12)
     table.add_column("Project", style="dim", width=12)
     table.add_column("Description")

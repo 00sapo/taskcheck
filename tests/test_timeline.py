@@ -115,6 +115,9 @@ def test_build_timeline_uses_config_theme():
 
 
 def test_theme_detection_and_project_colors(monkeypatch):
+    monkeypatch.setattr("taskcheck.theme._probe_osc11_background", lambda: "light")
+    assert detect_theme() == "light"
+    monkeypatch.setattr("taskcheck.theme._probe_osc11_background", lambda: None)
     monkeypatch.setenv("COLORFGBG", "0;15")
     assert detect_theme() == "light"
     monkeypatch.setenv("COLORFGBG", "15;0")
