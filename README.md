@@ -11,8 +11,6 @@ Use it if you want to:
 
 ![Daily timeline](docs/images/timeline-day.png)
 
-![Weekly timeline](docs/images/timeline-week.png)
-
 > [!IMPORTANT]
 > This repo is actively maintained again
 
