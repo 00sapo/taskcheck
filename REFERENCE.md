@@ -91,6 +91,8 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - `-v`, `--verbose`: increase output verbosity
 - `-i`, `--install`: install Taskwarrior settings + default config
 - `-r`, `--report REPORT`: render a report up to the given Taskwarrior date spec
+- `-t`, `--timeline DATE`: render a project-grouped timeline up to the given Taskwarrior date spec
+- `--zoom {day,week,month}`: choose timeline column granularity; defaults to `day`
 - `-s`, `--schedule`: run scheduling and write results back
 - `--undo`: restore the scheduling fields from the newest backup and consume it
 - `-f`, `--force-update`: refresh calendars, ignoring cache
@@ -107,3 +109,7 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - undo the latest schedule: `taskcheck --undo`
 - preview only: `taskcheck --schedule --dry-run`
 - report: `taskcheck --report today`
+- daily timeline: `taskcheck --timeline 1w`
+- weekly timeline: `taskcheck --timeline eom --zoom week`
+
+Timeline projects follow Taskwarrior's dotted hierarchy. Its symbols are `▶` start, `━` work, `◀` end, and `◆` deadline. In the daily view, `│`, `┃`, and `║` mark day, week, and month boundaries. Colors are assigned deterministically per project; `COLORFGBG` selects light or dark colors when the terminal provides it.

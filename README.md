@@ -22,6 +22,7 @@ Use it if you want to:
 - 🧠 Auto-adjust urgency when deadlines cannot be met
 - 🔄 Force-refresh iCal calendars
 - 📊 Custom reports for planned and unplanned tasks
+- 🗓️ Project-grouped timelines with day, week, and month views
 - 🎨 Report styling with emoji and extra attributes
 - 🗓️ Block time with iCal or Google Calendar, including all-day events
 
@@ -61,10 +62,14 @@ monday = [[9, 12.30], [14, 17]]
 tuesday = [[9, 12.30], [14, 17]]
 ```
 
-### Reports
+### Reports and timelines
 
 - `taskcheck -r today` → tasks planned for today
 - `taskcheck -r 1w` → tasks planned for the next week
+- `taskcheck --timeline 1w` → daily timeline for the next week
+- `taskcheck --timeline eom --zoom week` → weekly timeline through month end
+
+Timeline rows follow dotted project levels such as `work.client`. The track uses `▶` for a start, `━` for work, `◀` for an end, and `◆` for a deadline. Thin, heavy, and double rules separate days, weeks, and months. Project colors are deterministic and adapt to light or dark terminals when `COLORFGBG` is available.
 
 ## Reference
 

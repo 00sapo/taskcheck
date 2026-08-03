@@ -24,6 +24,9 @@ additional_attributes = []
 additional_attributes_unplanned = []
 # unplanned_max_due = "30d"
 emoji_keywords = {}
+
+[timeline]
+# theme = "auto" # or "light" / "dark"
 """
 
 

@@ -14,6 +14,8 @@ class TestArgumentParsing:
         assert args.verbose is False
         assert args.install is False
         assert args.report is None
+        assert args.timeline is None
+        assert args.zoom == "day"
         assert args.schedule is False
         assert args.undo is False
         assert args.force_update is False
@@ -73,6 +75,12 @@ class TestArgumentParsing:
         assert args.force_update is True
         assert args.taskrc == "/test"
         assert args.urgency_weight == 0.3
+
+    def test_timeline_arguments(self):
+        args = arg_parser.parse_args(["--timeline", "eom", "--zoom", "month"])
+
+        assert args.timeline == "eom"
+        assert args.zoom == "month"
 
     def test_urgency_weight_argument(self):
         """Test urgency weight argument parsing."""
@@ -590,6 +598,26 @@ class TestMainFunction:
                     mock_install.assert_called_once()
                     # load_config should not be called because install returns early
                     mock_load.assert_not_called()
+
+
+    @patch("taskcheck.timeline.generate_timeline")
+    def test_main_timeline_command(self, mock_generate, test_taskrc):
+        with patch(
+            "sys.argv",
+            [
+                "taskcheck",
+                "--timeline",
+                "eom",
+                "--zoom",
+                "month",
+                "--taskrc",
+                test_taskrc,
+            ],
+        ):
+            main()
+
+        mock_generate.assert_called_once()
+        assert mock_generate.call_args.kwargs["config"] == {}
 
 
 class TestImportErrorHandling:

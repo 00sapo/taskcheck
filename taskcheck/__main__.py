@@ -23,6 +23,18 @@ arg_parser.add_argument(
     help="Generate a report of the tasks based on the scheduling; can be any Taskwarrior datetime specification (e.g. today, tomorrow, eom, som, 1st, 2nd, etc.). It is considered as `by`, meaning that the report will be generated for all the days until the specified date and including it.",
 )
 arg_parser.add_argument(
+    "-t",
+    "--timeline",
+    action="store",
+    help="Show the schedule as a timeline through the specified Taskwarrior date.",
+)
+arg_parser.add_argument(
+    "--zoom",
+    choices=("day", "week", "month"),
+    default="day",
+    help="Set timeline column granularity (default: day).",
+)
+arg_parser.add_argument(
     "-s",
     "--schedule",
     action="store_true",
@@ -156,6 +168,27 @@ def main():
             force_update=args.force_update,
             taskrc=args.taskrc,
             scheduling_results=scheduling_results,
+        )
+        print_help = False
+
+    timeline = getattr(args, "timeline", None)
+    if isinstance(timeline, str):
+        from taskcheck.timeline import generate_timeline
+
+        scheduling_results = result if args.schedule and args.dry_run else None
+        zoom = getattr(args, "zoom", "day")
+        if zoom not in {"day", "week", "month"}:
+            zoom = "day"
+        try:
+            config = load_config().get("timeline", {})
+        except FileNotFoundError:
+            config = {}
+        generate_timeline(
+            timeline,
+            zoom=zoom,
+            taskrc=args.taskrc,
+            scheduling_results=scheduling_results,
+            config=config,
         )
         print_help = False
 
