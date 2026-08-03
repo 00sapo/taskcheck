@@ -98,7 +98,7 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - `-f`, `--force-update`: refresh calendars, ignoring cache
 - `--taskrc TASKRC`: use a custom TASKRC directory
 - `--urgency-weight FLOAT`: override the initial non-due urgency weight
-- `--dry-run`: preview scheduling without modifying Taskwarrior. With `--schedule`, saves the generated schedule to Taskwarrior's data directory; with `--report` or `--timeline`, loads that saved preview.
+- `-d`, `--dry-run`: preview scheduling without modifying Taskwarrior. With `--schedule`, saves the generated schedule to Taskwarrior's data directory; with `--report` or `--timeline`, loads that saved preview.
 - `--no-auto-adjust-urgency`: disable per-task automatic urgency adjustment when deadlines cannot be met
 - `--add-google-calendar`: authenticate with Google and print a ready-to-paste config block
 

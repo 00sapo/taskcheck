@@ -101,6 +101,9 @@ class TestArgumentParsing:
         args = arg_parser.parse_args(["--dry-run"])
         assert args.dry_run is True
 
+        args = arg_parser.parse_args(["-d"])
+        assert args.dry_run is True
+
         args = arg_parser.parse_args([])
         assert args.dry_run is False
 

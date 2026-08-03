@@ -63,6 +63,7 @@ arg_parser.add_argument(
     help="Weight for urgency in scheduling (0.0 to 1.0), overrides config value. When 1.0, the whole Taskwarrior urgency is used for scheduling. When 0.0, the Taskwarrior urgency is reduced to only due urgency.",
 )
 arg_parser.add_argument(
+    "-d",
     "--dry-run",
     action="store_true",
     help="Perform scheduling without modifying the Taskwarrior database, useful for testing.",
