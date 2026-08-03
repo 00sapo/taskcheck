@@ -15,7 +15,7 @@ class TestArgumentParsing:
         assert args.install is False
         assert args.report is None
         assert args.timeline is None
-        assert args.zoom == "day"
+        assert args.zoom == "auto"
         assert args.schedule is False
         assert args.undo is False
         assert args.force_update is False

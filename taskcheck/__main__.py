@@ -30,9 +30,9 @@ arg_parser.add_argument(
 )
 arg_parser.add_argument(
     "--zoom",
-    choices=("day", "week", "month"),
-    default="day",
-    help="Set timeline column granularity (default: day).",
+    choices=("auto", "day", "week", "month"),
+    default="auto",
+    help="Set timeline column granularity (default: auto).",
 )
 arg_parser.add_argument(
     "-s",
@@ -177,8 +177,8 @@ def main():
 
         scheduling_results = result if args.schedule and args.dry_run else None
         zoom = getattr(args, "zoom", "day")
-        if zoom not in {"day", "week", "month"}:
-            zoom = "day"
+        if zoom not in {"auto", "day", "week", "month"}:
+            zoom = "auto"
         try:
             config = load_config().get("timeline", {})
         except FileNotFoundError:

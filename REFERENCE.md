@@ -92,7 +92,7 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - `-i`, `--install`: install Taskwarrior settings + default config
 - `-r`, `--report REPORT`: render a report up to the given Taskwarrior date spec
 - `-t`, `--timeline DATE`: render a project-grouped timeline up to the given Taskwarrior date spec
-- `--zoom {day,week,month}`: choose timeline column granularity; defaults to `day`
+- `--zoom {auto,day,week,month}`: choose timeline column granularity; `auto` (the default) selects the most detailed view that fits the terminal width
 - `-s`, `--schedule`: run scheduling and write results back
 - `--undo`: restore the scheduling fields from the newest backup and consume it
 - `-f`, `--force-update`: refresh calendars, ignoring cache

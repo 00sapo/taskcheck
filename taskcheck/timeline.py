@@ -105,6 +105,14 @@ def _periods(start, end, zoom):
     return periods
 
 
+def select_zoom(start, end, columns, label_width):
+    for zoom in ("day", "week", "month"):
+        periods = _periods(start, end, zoom)
+        if label_width + sum(period.width + 1 for period in periods) <= columns:
+            return zoom
+    return "month"
+
+
 def _separator(periods, index, zoom):
     if index == 0:
         return "║"
@@ -168,10 +176,11 @@ def _header(periods, label_width, zoom):
     return lines
 
 
-def build_timeline(tasks, start, end, zoom="day", theme=None, config=None):
-    if zoom not in {"day", "week", "month"}:
+def build_timeline(
+    tasks, start, end, zoom="auto", theme=None, config=None, columns=80
+):
+    if zoom not in {"auto", "day", "week", "month"}:
         raise ValueError(f"Unsupported zoom: {zoom}")
-    periods = _periods(start, end, zoom)
     planned = [(task, parse_scheduling_dates(task)) for task in tasks]
     planned = [(task, dates) for task, dates in planned if dates]
     planned.sort(key=lambda item: (item[0].get("project", ""), item[0].get("id", 0)))
@@ -179,6 +188,8 @@ def build_timeline(tasks, start, end, zoom="day", theme=None, config=None):
         f"#{task.get('id', '?')} {task.get('description', '')}" for task, _ in planned
     ]
     label_width = min(36, max([20, *(len(label) + 6 for label in labels)]))
+    zoom = select_zoom(start, end, columns, label_width) if zoom == "auto" else zoom
+    periods = _periods(start, end, zoom)
     theme = theme or detect_theme(config=config)
 
     lines = [
@@ -226,10 +237,13 @@ def build_timeline(tasks, start, end, zoom="day", theme=None, config=None):
     return Group(*lines)
 
 
-def generate_timeline(constraint, zoom="day", taskrc=None, scheduling_results=None, config=None):
+def generate_timeline(constraint, zoom="auto", taskrc=None, scheduling_results=None, config=None):
     start = datetime.today().date()
     end = get_taskwarrior_date(constraint, taskrc=taskrc).date()
     tasks = (
         scheduling_results if scheduling_results is not None else fetch_tasks(taskrc)
     )
-    Console().print(build_timeline(tasks, start, end, zoom, config=config))
+    console = Console()
+    console.print(
+        build_timeline(tasks, start, end, zoom, config=config, columns=console.width)
+    )

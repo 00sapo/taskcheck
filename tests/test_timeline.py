@@ -7,6 +7,7 @@ from taskcheck.timeline import (
     detect_theme,
     parse_scheduling_dates,
     project_color,
+    select_zoom,
 )
 
 
@@ -54,6 +55,15 @@ def test_day_timeline_groups_projects_and_marks_events():
     assert "▶━◀" in output
 
 
+def test_select_zoom_uses_the_most_detailed_view_that_fits():
+    start = date(2024, 1, 1)
+    end = date(2024, 1, 31)
+
+    assert select_zoom(start, end, 200, 20) == "day"
+    assert select_zoom(start, end, 80, 20) == "week"
+    assert select_zoom(start, end, 40, 20) == "month"
+
+
 def test_day_boundaries_distinguish_week_and_month():
     output = render(
         build_timeline([], date(2024, 1, 28), date(2024, 2, 2), "day", "dark")
@@ -86,6 +96,14 @@ def test_week_and_month_zoom_aggregate_events():
     assert "Jan 2024" in month and "Feb 2024" in month
     assert "▶" in week and "◀" in week and "◆" in week
     assert "▶" in month and "◀" in month and "◆" in month
+
+
+def test_auto_zoom_uses_available_columns():
+    output = render(
+        build_timeline([], date(2024, 1, 1), date(2024, 1, 31), columns=80)
+    )
+
+    assert "Timeline · week" in output
 
 
 def test_build_timeline_uses_config_theme():
