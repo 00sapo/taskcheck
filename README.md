@@ -1,5 +1,3 @@
-![immagine](https://github.com/user-attachments/assets/27b83bb1-7a50-4923-a453-0a958fbe11ed)
-
 A Taskwarrior scheduler for people who want a realistic plan, not a manual to-do list.
 It turns tasks, working hours, and calendar blocks into an actionable schedule — then keeps due dates visible.
 
@@ -8,6 +6,12 @@ Use it if you want to:
 - fit tasks into real availability
 - be sure your long-time plan won't go overdue
 - keep Taskwarrior as the source of truth
+
+![Dry-run schedule and report](docs/images/dry-run-report.png)
+
+![Daily timeline](docs/images/timeline-day.png)
+
+![Weekly timeline](docs/images/timeline-week.png)
 
 > [!IMPORTANT]
 > This repo is actively maintained again
