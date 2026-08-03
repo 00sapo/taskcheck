@@ -17,7 +17,7 @@ Use it if you want to:
 - ✨ Auto-schedule tasks from working hours + calendar blocks
 - 🧭 Support complex working-hour maps
 - ⏱️ Consider urgency, due dates, and dependencies
-- 🧪 Dry-run mode to preview changes
+- 🧪 Persisted dry-run previews for reports and timelines
 - ↩️ Undo the latest schedule update
 - 🧠 Auto-adjust urgency when deadlines cannot be met
 - 🔄 Force-refresh iCal calendars
@@ -69,7 +69,9 @@ tuesday = [[9, 12.30], [14, 17]]
 - `taskcheck --timeline 1w` → automatic day/week/month timeline for the next week
 - `taskcheck --timeline eom --zoom week` → weekly timeline through month end
 
-Timeline rows follow dotted project levels such as `work.client`. Without `--zoom`, the most detailed view that fits the terminal width is selected: day, then week, then month. The track uses `▶` for a start, `━` for work, `◀` for an end, and `◆` for a deadline. Thin, heavy, and double rules separate days, weeks, and months. Project colors are deterministic and adapt to light or dark terminals when `COLORFGBG` is available.
+Create a preview with `taskcheck --schedule --dry-run`. It does not update Taskwarrior; instead, it saves the generated schedule to the Taskwarrior data directory. Reuse it with `taskcheck --report today --dry-run` or `taskcheck --timeline 1w --dry-run`.
+
+Timeline rows follow dotted project levels such as `work.client`. Without `--zoom`, the most detailed view that fits the terminal width is selected: day, then week, then month. The track uses `▶` for a start, `━` for work, `◀` for an end, and `◆` for a deadline. Thin, heavy, and double rules separate days, weeks, and months. Project colors are deterministic and adapt to light or dark terminals through OSC 11, with config and environment fallbacks.
 
 ## Reference
 

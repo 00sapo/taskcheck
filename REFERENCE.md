@@ -98,7 +98,7 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - `-f`, `--force-update`: refresh calendars, ignoring cache
 - `--taskrc TASKRC`: use a custom TASKRC directory
 - `--urgency-weight FLOAT`: override the initial non-due urgency weight
-- `--dry-run`: preview scheduling without modifying Taskwarrior
+- `--dry-run`: preview scheduling without modifying Taskwarrior. With `--schedule`, saves the generated schedule to Taskwarrior's data directory; with `--report` or `--timeline`, loads that saved preview.
 - `--no-auto-adjust-urgency`: disable per-task automatic urgency adjustment when deadlines cannot be met
 - `--add-google-calendar`: authenticate with Google and print a ready-to-paste config block
 
@@ -107,7 +107,9 @@ The final four settings use Taskwarrior's [urgency configuration](https://taskwa
 - first install: `pipx install taskcheck && taskcheck --install`
 - schedule now: `taskcheck --schedule`
 - undo the latest schedule: `taskcheck --undo`
-- preview only: `taskcheck --schedule --dry-run`
+- create a reusable preview: `taskcheck --schedule --dry-run`
+- report the saved preview: `taskcheck --report today --dry-run`
+- timeline the saved preview: `taskcheck --timeline 1w --dry-run`
 - report: `taskcheck --report today`
 - daily timeline: `taskcheck --timeline 1w`
 - weekly timeline: `taskcheck --timeline eom --zoom week`
