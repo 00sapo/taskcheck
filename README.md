@@ -6,10 +6,7 @@ Use it if you want to:
 - fit tasks into real availability
 - be sure your long-time plan won't go overdue
 - keep Taskwarrior as the source of truth
-
-![Dry-run schedule and report](docs/images/dry-run-report.png)
-
-![Daily timeline](docs/images/timeline-day.png)
+- handle your time across multiple tasks carried on by LLMs
 
 > [!IMPORTANT]
 > This repo is actively maintained again
@@ -17,7 +14,7 @@ Use it if you want to:
 ## Features
 
 - ✨ Auto-schedule tasks from working hours + calendar blocks
-- 🧭 Support complex working-hour maps
+- 🧠 Schedule agent-assisted tasks alongside your own, based on how much supervision they need
 - ⏱️ Consider urgency, due dates, and dependencies
 - 🧪 Persisted dry-run previews for reports and timelines
 - ↩️ Undo the latest schedule update
@@ -28,19 +25,16 @@ Use it if you want to:
 - 🎨 Report styling with emoji and extra attributes
 - 🗓️ Block time with iCal or Google Calendar, including all-day events
 
-## Quick start
+![Dry-run schedule and report](docs/images/dry-run-report.png)
 
-1. `pipx install taskcheck`
-2. `taskcheck --install` ← setup only
-3. add `estimated` + `time_map` UDAs
-4. edit `~/.config/task/taskcheck.toml` (see [Reference](#Reference))
-5. `taskcheck --schedule`
-6. `taskcheck --undo` restores the scheduling fields changed by the latest run
+![Daily timeline](docs/images/timeline-day.png)
 
 ## How it works
 
-Taskcheck reads your pending and waiting tasks, estimates when each one can be worked on, and writes back a schedule.
-It respects:
+Taskcheck reads your pending and waiting tasks, estimates when each one can be worked on, and writes
+back a schedule. For tasks tagged `+agent`, it treats `estimated` as the agent's work time and
+`agent_weight` as the percentage of that time needing your attention. It respects:
+
 - your working hours
 - task duration estimates
 - calendar events and vacations from iCal / Google Calendar
@@ -51,10 +45,21 @@ It updates Taskwarrior with:
 - `completion_date` → when work is expected to finish
 - a warning when a task will miss its due date
 
+## Quick start
+
+1. `pipx install taskcheck`
+2. `taskcheck --install` ← setup only: registers required Taskwarrior settings  inyour taskwarrior config file and offers to create the
+   config file; it does not schedule tasks.
+3. edit `~/.config/task/taskcheck.toml` (see [Reference](#Reference))
+4. tune your tasks: add `estimated`, `time_map`, `agent_weight` UDAs and the `+agent` tag (`time_map` and `agent_weight` may use the default value defined in the Taskwarrior settings)
+5. `taskcheck --schedule`
+6. `taskcheck --undo` restores the scheduling fields changed by the latest run
+
 ### Required UDAs
 
 - `estimated`: expected duration in hours
 - `time_map`: which working-hour profile applies to the task, for example `work` or `weekend`
+- `agent_weight`: required for `+agent` tasks; the percentage (0–100) of agent work time that needs your attention. It defaults to 25 when using `taskcheck --install`.
 
 Example:
 
@@ -66,23 +71,15 @@ tuesday = [[9, 12.30], [14, 17]]
 
 ### Agent tasks and mixed blocks
 
-Tag delegated tasks `+agent` and give them an `agent_weight` from 0 to 100.
-`estimated` is **agent execution time**; `agent_weight` is the percentage of
-execution time that requires your interaction. For example:
+Mark a task `+agent` when a computer helper will do the work, and set `agent_weight` to show what
+percentage of its work time needs your attention. For example, `10` means you spend about 10 minutes
+interacting with the agent for each hour the agent works. Taskcheck can plan several agent jobs at
+once, fill the time left with your own tasks, and respect waiting dates and dependencies.
 
 ```bash
 task add "Implement API" +agent estimated:5h agent_weight:10
 task add "Review results" estimated:1h
 ```
-
-The five-hour agent task requires 30 minutes of your attention, while occupying
-five hours of elapsed calendar time (two full 2-hour chunks and a final 1-hour allocation).
-Several agents can run concurrently in a block, and remaining human-time
-capacity can be allocated to human tasks. Short human allocations are permitted
-**inside mixed agent blocks** even when the configured work chunk is two hours;
-they do not create separate calendar sub-blocks. Human-only blocks keep the
-previous behavior. Dependencies and wait dates are respected, and reports still
-show aggregated task hours per day.
 
 Run `taskcheck --install` to register the `agent_weight` Taskwarrior UDA.
 
@@ -93,9 +90,15 @@ Run `taskcheck --install` to register the `agent_weight` Taskwarrior UDA.
 - `taskcheck --timeline 1w` → automatic day/week/month timeline for the next week
 - `taskcheck --timeline eom --zoom week` → weekly timeline through month end
 
-Create a preview with `taskcheck --schedule --dry-run`. It does not update Taskwarrior; instead, it saves the generated schedule to the Taskwarrior data directory. Reuse it with `taskcheck --report today --dry-run` or `taskcheck --timeline 1w --dry-run`.
+Create a preview with `taskcheck --schedule --dry-run`. It does not update Taskwarrior; instead, it
+saves the generated schedule to the Taskwarrior data directory. Reuse it with `taskcheck --report
+today --dry-run` or `taskcheck --timeline 1w --dry-run`.
 
-Timeline rows follow dotted project levels such as `work.client`. Without `--zoom`, the most detailed view that fits the terminal width is selected: day, then week, then month. The track uses `▶` for a start, `━` for work, `◀` for an end, and `◆` for a deadline. Thin, heavy, and double rules separate days, weeks, and months. Project colors are deterministic and adapt to light or dark terminals through OSC 11, with config and environment fallbacks.
+Timeline rows follow dotted project levels such as `work.client`. Without `--zoom`, the most
+detailed view that fits the terminal width is selected: day, then week, then month. The track uses
+`▶` for a start, `━` for work, `◀` for an end, and `◆` for a deadline. Thin, heavy, and double rules
+separate days, weeks, and months. Project colors are deterministic and adapt to light or dark
+terminals through OSC 11, with config and environment fallbacks.
 
 ## Reference
 
