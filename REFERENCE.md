@@ -67,7 +67,19 @@ These [User Defined Attributes (UDAs)](https://taskwarrior.org/docs/udas/) store
 | `uda.completion_date.type = date` | Adds `completion_date`: Taskcheck's predicted finish date. |
 | `uda.scheduling.type = string` | Adds `scheduling`: schedule data used by Taskcheck reports. |
 | `uda.min_block.type = numeric` | Adds `min_block`: the work chunk assigned before Taskcheck recalculates urgency; default `2` hours. |
+| `uda.agent_weight.type = numeric` | Adds `agent_weight`: percentage (0–100) of a tagged `+agent` task’s execution time requiring human interaction. |
 | `recurrence.confirmation = no` | Prevents confirmation prompts while Taskcheck updates recurring tasks. See [recurring tasks](https://taskwarrior.org/docs/recurrence/). |
+
+### Agent scheduling
+
+Tag a task `+agent` and set `agent_weight` to a number between `0` and `100`.
+For example, `estimated:5h agent_weight:10 +agent` represents five hours of
+agent execution and 30 minutes of human interaction. Multiple agents may run
+within the same work chunk, and human tasks can use the remaining interaction
+budget, including allocations smaller than `min_block`. Only the containing
+work chunk is scheduled; internal subdivisions are not written to Taskwarrior.
+Ordinary (non-agent) work remains exclusive when no agent anchors the chunk.
+Tasks dependent on work in the mixed chunk must wait for a later chunk.
 
 ### Optional — installed only after confirming the second prompt
 

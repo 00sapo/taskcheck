@@ -148,7 +148,25 @@ def hours_to_pdth(hours):
 def get_long_range_time_map(
     time_maps, time_map_names, days_ahead, calendars, verbose=False
 ):
-    key = ",".join(time_map_names)
+    # The cache must distinguish both the horizon and the input configuration.
+    # Otherwise a previous schedule (possibly with a different time map or
+    # calendar) can silently give tasks stale daily availability.
+    key = (
+        tuple(time_map_names),
+        days_ahead,
+        datetime.today().date(),
+        json.dumps(
+            {name: time_maps[name] for name in time_map_names},
+            sort_keys=True,
+            default=str,
+        ),
+        json.dumps(
+            calendars,
+            sort_keys=True,
+            default=lambda value: value.isoformat()
+            if hasattr(value, "isoformat") else str(value),
+        ),
+    )
     if key in long_range_time_map:
         task_time_map = long_range_time_map[key]
     else:

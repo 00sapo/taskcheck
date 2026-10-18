@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -724,7 +724,7 @@ wheels = [
 
 [[package]]
 name = "taskcheck"
-version = "1.4.1"
+version = "1.5.2"
 source = { editable = "." }
 dependencies = [
     { name = "appdirs" },

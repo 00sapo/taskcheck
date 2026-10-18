@@ -63,6 +63,8 @@ def install():
         ("uda.min_block.type", "numeric"),
         ("uda.min_block.label", "Minimum Time Block"),
         ("uda.min_block.default", "2"),
+        ("uda.agent_weight.type", "numeric"),
+        ("uda.agent_weight.label", "Agent Interaction (%)"),
         ("recurrence.confirmation", "no"),
     ]
 
@@ -120,7 +122,7 @@ def install():
         """
 _________________________________________________________________________________________
 Required configuration for taskcheck includes:
-- 3 UDA fields 
+- Taskwarrior UDAs, including `agent_weight` for +agent tasks
 - turning off confirmation for recurring tasks 
 
 Do you want to continue? [y/N] """

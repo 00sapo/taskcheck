@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 
 from rich.table import Table
 
+from taskcheck.agent_blocks import allocate_agent_block, get_agent_weight
+
 from taskcheck.undo import create_undo_backup
 from taskcheck.common import (
     AVOID_STATUS,
@@ -330,11 +332,14 @@ def initialize_task_info(tasks, time_maps, days_ahead, urgency_coefficients, cal
             continue
         if "estimated" not in task or "time_map" not in task:
             continue
+        get_agent_weight(task)  # Validate +agent tasks before scheduling.
         estimated_hours = pdth_to_hours(task["estimated"])
         time_map_names = task["time_map"].split(",")
         task_time_map, today_used_hours = get_long_range_time_map(
             time_maps, time_map_names, days_ahead, calendars
         )
+        # The cache returns a shared list.  Mutations must be task-local.
+        task_time_map = list(task_time_map)
         task_uuid = task["uuid"]
         initial_urgency = float(task.get("urgency", 0))
         estimated_urgency = urgency_estimated(
@@ -414,6 +419,25 @@ def allocate_time_for_day(
             if wait and date <= datetime.strptime(wait, "%Y%m%dT%H%M%SZ").date():
                 if verbose:
                     print(f"Skipping task {info['task']['id']} due to wait date {wait}")
+                continue
+            if get_agent_weight(info["task"]) is not None:
+                # Agent tasks overlap in elapsed time.  Charge interactions and
+                # human work to the same block's human-time budget.
+                elapsed, allocations = allocate_agent_block(
+                    tasks_remaining, sorted_task_ids, day_offset,
+                    day_remaining_hours, date, uuid,
+                )
+                if elapsed > 0:
+                    day_remaining_hours -= elapsed
+                    allocated = True
+                    if verbose:
+                        print(f"Allocated mixed block ({elapsed:.2f}h): {allocations}")
+                    for allocated_uuid in allocations:
+                        allocated_info = tasks_remaining[allocated_uuid]
+                        if (allocated_info["remaining_hours"] <= 0
+                            or allocated_info["task_time_map"][day_offset] <= 0):
+                            del tasks_remaining[allocated_uuid]
+                    break
                 continue
             allocation = allocate_time_to_task(info, day_offset, day_remaining_hours)
             if allocation > 0:

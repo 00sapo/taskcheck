@@ -64,6 +64,28 @@ monday = [[9, 12.30], [14, 17]]
 tuesday = [[9, 12.30], [14, 17]]
 ```
 
+### Agent tasks and mixed blocks
+
+Tag delegated tasks `+agent` and give them an `agent_weight` from 0 to 100.
+`estimated` is **agent execution time**; `agent_weight` is the percentage of
+execution time that requires your interaction. For example:
+
+```bash
+task add "Implement API" +agent estimated:5h agent_weight:10
+task add "Review results" estimated:1h
+```
+
+The five-hour agent task requires 30 minutes of your attention, while occupying
+five hours of elapsed calendar time (two full 2-hour chunks and a final 1-hour allocation).
+Several agents can run concurrently in a block, and remaining human-time
+capacity can be allocated to human tasks. Short human allocations are permitted
+**inside mixed agent blocks** even when the configured work chunk is two hours;
+they do not create separate calendar sub-blocks. Human-only blocks keep the
+previous behavior. Dependencies and wait dates are respected, and reports still
+show aggregated task hours per day.
+
+Run `taskcheck --install` to register the `agent_weight` Taskwarrior UDA.
+
 ### Reports and timelines
 
 - `taskcheck -r today` → tasks planned for today
