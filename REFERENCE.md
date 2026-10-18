@@ -68,6 +68,7 @@ These [User Defined Attributes (UDAs)](https://taskwarrior.org/docs/udas/) store
 | `uda.scheduling.type = string` | Adds `scheduling`: schedule data used by Taskcheck reports. |
 | `uda.min_block.type = numeric` | Adds `min_block`: the work chunk assigned before Taskcheck recalculates urgency; default `2` hours. |
 | `uda.agent_weight.type = numeric` | Adds `agent_weight`: percentage (0–100) of a tagged `+agent` task’s execution time requiring human interaction. |
+| `uda.agent_weight.default = 25` | Uses 25% of an agent task’s execution time as human-interaction time unless the task sets another value. |
 | `recurrence.confirmation = no` | Prevents confirmation prompts while Taskcheck updates recurring tasks. See [recurring tasks](https://taskwarrior.org/docs/recurrence/). |
 
 ### Agent scheduling

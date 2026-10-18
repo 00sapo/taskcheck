@@ -149,4 +149,5 @@ def test_install_registers_agent_weight_uda(monkeypatch):
     install_module.install()
     applied = [call.args for call in apply.call_args_list]
     assert ('uda.agent_weight.type', 'numeric') in applied
-    assert ('uda.agent_weight.label', 'Agent Interaction (%)') in applied
+    assert ('uda.agent_weight.label', 'Agent Weight (%)') in applied
+    assert ('uda.agent_weight.default', '25') in applied

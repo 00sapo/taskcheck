@@ -64,7 +64,8 @@ def install():
         ("uda.min_block.label", "Minimum Time Block"),
         ("uda.min_block.default", "2"),
         ("uda.agent_weight.type", "numeric"),
-        ("uda.agent_weight.label", "Agent Interaction (%)"),
+        ("uda.agent_weight.label", "Agent Weight (%)"),
+        ("uda.agent_weight.default", "25"),
         ("recurrence.confirmation", "no"),
     ]
 
