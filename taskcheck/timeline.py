@@ -37,10 +37,14 @@ def project_color(project, theme):
 
 def parse_scheduling_dates(task):
     dates = []
+    wait = task.get("wait")
+    wait_date = datetime.strptime(wait, "%Y%m%dT%H%M%SZ").date() if wait else None
     for line in task.get("scheduling", "").splitlines():
         match = SCHEDULING_DATE.match(line)
         if match:
-            dates.append(date.fromisoformat(match.group(1)))
+            scheduled_date = date.fromisoformat(match.group(1))
+            if wait_date is None or scheduled_date >= wait_date:
+                dates.append(scheduled_date)
     return sorted(set(dates))
 
 

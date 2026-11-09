@@ -105,6 +105,26 @@ class TestTaskInitialization:
 
 
 class TestTimeAllocation:
+    @pytest.mark.parametrize("agent", [False, True])
+    def test_task_starts_on_wait_date(self, agent):
+        from freezegun import freeze_time
+
+        task = {
+            "id": 1, "uuid": "waiting", "estimated": "PT2H", "time_map": "work",
+            "wait": "20231206T000000Z", "urgency": 10.0,
+        }
+        if agent:
+            task.update(tags=["agent"], agent_weight=25)
+        coeffs = UrgencyCoefficients({"PT2H": 0}, False, 0, 365, 12, 2)
+        with freeze_time("2023-12-05"):
+            with patch("taskcheck.parallel.get_long_range_time_map", return_value=([8.0] * 3, 0.0)):
+                info = initialize_task_info([task], {}, 3, coeffs, [])
+            allocate_time_for_day(info, 0, coeffs, False, 1.0)
+            assert info["waiting"]["scheduling"] == {}
+            allocate_time_for_day(info, 1, coeffs, False, 1.0)
+        assert info["waiting"]["scheduling"] == {"2023-12-06": 2.0}
+        assert info["waiting"]["remaining_hours"] == 0
+
     def test_allocate_time_for_day_single_task(self, sample_config):
         task_info = {
             "task-1": {

@@ -416,7 +416,7 @@ def allocate_time_for_day(
                 continue
 
             wait = info["task"].get("wait")
-            if wait and date <= datetime.strptime(wait, "%Y%m%dT%H%M%SZ").date():
+            if wait and date < datetime.strptime(wait, "%Y%m%dT%H%M%SZ").date():
                 if verbose:
                     print(f"Skipping task {info['task']['id']} due to wait date {wait}")
                 continue
@@ -647,6 +647,16 @@ def update_tasks_with_scheduling_info(task_info, verbose, taskrc):
         scheduling_note = ""
         scheduled_dates = sorted(info["scheduling"].keys())
         if not scheduled_dates:
+            if any(task.get(field) for field in ("scheduled", "completion_date", "scheduling")):
+                subprocess.run(
+                    [
+                        "task", str(task["id"]), "modify",
+                        "scheduled:", "completion_date:", "scheduling:",
+                    ],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    env=get_task_env(taskrc),
+                )
             continue
         start_date = scheduled_dates[0]
         end_date = scheduled_dates[-1]

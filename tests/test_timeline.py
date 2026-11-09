@@ -23,6 +23,14 @@ def test_parse_scheduling_dates_ignores_invalid_lines():
     assert parse_scheduling_dates(task) == [date(2024, 1, 2), date(2024, 1, 3)]
 
 
+def test_wait_date_overrides_saved_schedule():
+    task = {
+        "wait": "20240103T000000Z",
+        "scheduling": "2024-01-02 - PT2H\n2024-01-03 - PT2H\n2024-01-04 - PT2H",
+    }
+    assert parse_scheduling_dates(task) == [date(2024, 1, 3), date(2024, 1, 4)]
+
+
 def test_day_timeline_groups_projects_and_marks_events():
     tasks = [
         {

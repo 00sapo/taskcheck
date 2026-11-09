@@ -67,6 +67,15 @@ class TestDateUtilities:
 
 
 class TestTaskFiltering:
+    @pytest.mark.parametrize("day, expected", [(5, []), (6, [1]), (7, [1])])
+    def test_wait_date_overrides_saved_schedule(self, day, expected):
+        task = {
+            "id": 1, "description": "Waiting task", "urgency": 10.0,
+            "wait": "20231206T000000Z",
+            "scheduling": "\n".join(f"2023-12-{d:02d} - PT2H" for d in (5, 6, 7)),
+        }
+        assert [row["id"] for row in get_tasks({}, [task], 2023, 12, day)] == expected
+
     def test_get_tasks_with_scheduling(self, sample_config):
         tasks_with_scheduling = [
             {

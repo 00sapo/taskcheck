@@ -184,6 +184,11 @@ def get_tasks(config, tasks, year, month, day):
     regex = re.compile(rf"{year:04d}-{month:02d}-{day:02d} - ([PDTHM0-9]+)")
     valid_tasks = []
     for task in tasks:
+        wait = task.get("wait")
+        if wait and datetime(year, month, day).date() < datetime.strptime(
+            wait, "%Y%m%dT%H%M%SZ"
+        ).date():
+            continue
         for line in task.get("scheduling", "").split("\n"):
             m = regex.match(line)
             if m:

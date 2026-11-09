@@ -45,6 +45,11 @@ It updates Taskwarrior with:
 - `completion_date` → when work is expected to finish
 - a warning when a task will miss its due date
 
+Taskcheck does not allocate work before a task's `wait` date.
+It can allocate work on that date because it plans whole days, not exact start times.
+Reports and timelines ignore saved work dates before `wait`, even when you change `wait` after scheduling.
+If no work fits within the planning period, the next scheduling run clears the task's old schedule fields.
+
 ## Quick start
 
 1. `pipx install taskcheck`

@@ -39,7 +39,7 @@ def _eligible(info, pending, date):
     if any(dep in pending for dep in info["task"].get("depends", [])):
         return False
     wait = info["task"].get("wait")
-    if wait and date <= datetime.strptime(wait, "%Y%m%dT%H%M%SZ").date():
+    if wait and date < datetime.strptime(wait, "%Y%m%dT%H%M%SZ").date():
         return False
     return True
 
