@@ -133,6 +133,10 @@ Before writing a schedule, taskcheck backs up the affected tasks' `scheduled`, `
 
 If a task would finish after its due date, taskcheck retries with a total-urgency override. Each retry moves the task immediately above the task with the smallest greater urgency by adding `urgency_epsilon` (default: `0.1`). At rank 1, it adds epsilon for up to `max_top_urgency_rounds` retries (default: `10`), then tries once at urgency `1000`. If the task is still late, taskcheck stops raising it and optimizes the other overdue tasks.
 
+Each task gets at most `N - 1 + max_top_urgency_rounds` priority increases before the final retry at urgency `1000`.
+Here, `N` is the number of tasks in the schedule.
+This limit stops repeated retries when tasks with competing deadlines keep overtaking each other.
+
 ## Tips and Tricks
 
 - You can exclude a task from being scheduled by removing the `time_map` or `estimated` attributes.

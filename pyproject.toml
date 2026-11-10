@@ -3,7 +3,7 @@ name = "taskcheck"
 version = "1.6.1"
 description = "Automatic scheduler for taskwarrior"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
   "appdirs>=1.4.4",
   "google-api-python-client>=2.198.0",

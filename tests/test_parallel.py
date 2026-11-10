@@ -388,6 +388,25 @@ class TestMainSchedulingFunction:
 
 
 class TestAutoAdjustUrgency:
+    def test_competing_overdue_tasks_exhaust_retries(self):
+        task_info = {
+            uuid: {"task": {"uuid": uuid, "urgency": urgency}, "urgency": urgency}
+            for uuid, urgency in (("a", 1.0), ("b", 2.0))
+        }
+        overrides = {}
+        states = {}
+        # Resolving one deadline can make the other task late on the next pass.
+        for index in range(12):
+            overdue = [task_info["a" if index % 2 == 0 else "b"]["task"]]
+            advance_urgency_override(
+                overdue, task_info, overrides, states, epsilon=0.1, max_top_rounds=2
+            )
+        assert advance_urgency_override(
+            [info["task"] for info in task_info.values()],
+            task_info, overrides, states, epsilon=0.1, max_top_rounds=2,
+        ) is None
+        assert overrides == {"a": 1000.0, "b": 1000.0}
+
     def test_urgency_override_moves_up_one_rank_then_uses_bounded_top_rounds(self):
         task_info = {
             "t1": {"task": {"uuid": "t1"}, "urgency": 1.0},

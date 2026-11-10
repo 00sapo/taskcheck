@@ -36,6 +36,8 @@ tuesday = [[9, 12.30], [14, 17]]
 - `weight_urgency`: multiplier for non-due urgency used by the baseline schedule; override with `--urgency-weight`. Due urgency is never multiplied.
 - `urgency_epsilon`: positive increment used to move an overdue task immediately above the next task in the descending total-urgency ranking (default: `0.1`)
 - `max_top_urgency_rounds`: number of additional epsilon retries after an overdue task reaches rank 1 (default: `10`); one final retry uses total urgency `1000`
+- Each task gets at most `N - 1 + max_top_urgency_rounds` priority increases before the final retry, where `N` counts scheduled tasks.
+- This total limit also applies when competing tasks repeatedly overtake each other.
 - `n_undos`: maximum number of schedule backups retained under `<Taskwarrior data>/taskcheck/undos` (default: `1`); `0` disables backups
 
 ### `[calendars.<name>]`

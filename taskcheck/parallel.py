@@ -58,7 +58,7 @@ def advance_urgency_override(
     for task_uuid in overdue_uuids:
         state = adjustment_states.setdefault(
             task_uuid,
-            {"top_rounds": 0, "fallback_used": False, "exhausted": False},
+            {"top_rounds": 0, "rounds": 0, "fallback_used": False, "exhausted": False},
         )
         if state["exhausted"]:
             continue
@@ -72,7 +72,10 @@ def advance_urgency_override(
             for uuid in task_info
             if uuid != task_uuid and effective_urgency(uuid) > current_urgency
         ]
-        if greater_urgencies:
+        if state["rounds"] >= len(task_info) - 1 + max_top_rounds:
+            urgency_overrides[task_uuid] = 1000.0
+            state["fallback_used"] = True
+        elif greater_urgencies:
             urgency_overrides[task_uuid] = min(greater_urgencies) + epsilon
         elif state["top_rounds"] < max_top_rounds:
             urgency_overrides[task_uuid] = current_urgency + epsilon
@@ -80,6 +83,7 @@ def advance_urgency_override(
         else:
             urgency_overrides[task_uuid] = 1000.0
             state["fallback_used"] = True
+        state["rounds"] += 1
         return task_uuid
     return None
 
