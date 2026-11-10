@@ -1,7 +1,9 @@
 import json
+import subprocess
 from pathlib import Path
 
 from taskcheck.undo import get_task_data_dir
+from taskcheck.common import get_task_env
 
 
 def get_dry_run_path(taskrc=None):
@@ -19,4 +21,17 @@ def load_dry_run_results(taskrc=None):
     path = get_dry_run_path(taskrc)
     if not path.exists():
         return None
-    return json.loads(path.read_text())
+    results = json.loads(path.read_text())
+    if not results:
+        return results
+    response = subprocess.run(
+        ["task", "export"], capture_output=True, text=True,
+        env=get_task_env(taskrc),
+    )
+    current_tasks = {
+        task["uuid"]: task for task in json.loads(response.stdout)
+    }
+    return [
+        {**current_tasks.get(task.get("uuid"), {}), **task}
+        for task in results
+    ]

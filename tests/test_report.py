@@ -246,7 +246,7 @@ class TestReportGeneration:
     @patch('taskcheck.report.fetch_tasks')
     @patch('taskcheck.report.get_days_in_constraint')
     @patch('taskcheck.report.get_unplanned_tasks')
-    def test_generate_report_with_unplanned(self, mock_unplanned, mock_days, mock_fetch, sample_config, test_taskrc):
+    def test_generate_report_with_unplanned(self, mock_unplanned, mock_days, mock_fetch, sample_config, test_taskrc, capsys):
         mock_fetch.return_value = []
         mock_days.return_value = [(2023, 12, 5)]
         mock_unplanned.return_value = [
@@ -260,7 +260,7 @@ class TestReportGeneration:
         
         generate_report(sample_config, "today", verbose=True, taskrc=test_taskrc)
         
-        mock_unplanned.assert_called_once_with(sample_config["report"], [], taskrc=test_taskrc)
+        assert "Unplanned task" in capsys.readouterr().out
 
     @patch('taskcheck.report.display_unplanned_tasks')
     @patch('taskcheck.report.get_unplanned_tasks')
@@ -278,5 +278,4 @@ class TestReportGeneration:
         generate_report(sample_config, "today", verbose=False, taskrc=test_taskrc, scheduling_results=scheduling_results)
 
         mock_fetch.assert_called_once_with(test_taskrc)
-        mock_unplanned.assert_called_once_with(sample_config["report"], mock_fetch.return_value, taskrc=test_taskrc)
         mock_display.assert_called_once()

@@ -208,6 +208,7 @@ def get_tasks(config, tasks, year, month, day):
                             attr: task.get(attr, "")
                             for attr in config.get("additional_attributes", [])
                         },
+                        "tags": task.get("tags", []),
                     }
                 )
     valid_tasks = sorted(valid_tasks, key=lambda x: x["urgency"], reverse=True)
@@ -287,7 +288,22 @@ def get_unplanned_tasks(config, tasks, taskrc=None):
 
 
 def generate_report(config, constraint, verbose=False, force_update=False, taskrc=None, scheduling_results=None):
-    report_config = config["report"]
+    from taskcheck.common import get_task_env
+
+    report_config = dict(config["report"])
+    result = subprocess.run(
+        ["task", "_show"],
+        capture_output=True,
+        text=True,
+        env=get_task_env(taskrc),
+    )
+    report_config["attribute_labels"] = {
+        key[4:-6]: value
+        for line in result.stdout.splitlines()
+        if "=" in line
+        for key, value in [line.split("=", 1)]
+        if key.startswith("uda.") and key.endswith(".label") and value
+    }
     theme = detect_theme(config=config.get("timeline", {}))
     console = Console()
     
@@ -354,10 +370,15 @@ def build_tasks_table(config, tasks, theme="dark"):
     table.add_column("Description")
     table.add_column("Time", justify="right")
     for attr in config.get("additional_attributes", []):
-        table.add_column(attr.capitalize(), justify="right")
+        table.add_column(
+            config.get("attribute_labels", {}).get(attr, attr.capitalize()),
+            justify="right",
+        )
 
     for task in tasks:
         task_id = f"[bold green]#{task['id']}[/bold green]"
+        if "agent" in task.get("tags", []):
+            task_id += " 🤖"
         project = task.get("project", "")
         description = Text(task["description"], style="italic")
         hours = f"[yellow]{task['scheduling_hours']}[/yellow]"
@@ -423,10 +444,15 @@ def build_unplanned_tasks_table(config, tasks, theme="dark"):
     table.add_column("Project", style="dim", width=12)
     table.add_column("Description")
     for attr in config.get("additional_attributes_unplanned", []):
-        table.add_column(attr.capitalize(), justify="right")
+        table.add_column(
+            config.get("attribute_labels", {}).get(attr, attr.capitalize()),
+            justify="right",
+        )
 
     for task in tasks:
         task_id = f"[bold green]#{task['id']}[/bold green]"
+        if "agent" in task.get("tags", []):
+            task_id += " 🤖"
         project = task.get("project", "")
         description = Text(task["description"], style="italic")
         emoji = get_task_emoji(config, task)

@@ -99,6 +99,11 @@ Create a preview with `taskcheck --schedule --dry-run`. It does not update Taskw
 saves the generated schedule to the Taskwarrior data directory. Reuse it with `taskcheck --report
 today --dry-run` or `taskcheck --timeline 1w --dry-run`.
 
+Report columns use the labels from `uda.<attribute>.label` in the active Taskwarrior configuration.
+Reports show a robot icon beside the task ID for tasks tagged `agent`.
+Dry-run schedules retain custom task attributes, including `agent_weight`.
+When you load an older preview, Taskcheck fills missing task attributes from Taskwarrior and keeps the saved schedule.
+
 Timeline rows follow dotted project levels such as `work.client`. Without `--zoom`, the most
 detailed view that fits the terminal width is selected: day, then week, then month. The track uses
 `▶` for a start, `━` for work, `◀` for an end, and `◆` for a deadline. Thin, heavy, and double rules

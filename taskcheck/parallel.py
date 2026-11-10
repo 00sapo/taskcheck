@@ -293,13 +293,7 @@ def check_tasks_parallel(
                 scheduling_note += f"{date_str} - {hours_to_pdth(hours)}\n"
 
             task_result = {
-                "id": task["id"],
-                "uuid": task["uuid"],
-                "description": task["description"],
-                "project": task.get("project", ""),
-                "urgency": task.get("urgency", 0),
-                "estimated": task["estimated"],
-                "due": task.get("due", ""),
+                **task,
                 "scheduled": start_date,
                 "completion_date": end_date,
                 "scheduling": scheduling_note.strip(),
