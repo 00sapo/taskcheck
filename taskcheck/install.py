@@ -20,8 +20,8 @@ n_undos = 1
 
 [report]
 include_unplanned = true
-additional_attributes = []
-additional_attributes_unplanned = []
+attributes = ["id", "project", "description", "scheduling_hours"]
+attributes_unplanned = ["id", "project", "description"]
 # unplanned_max_due = "30d"
 emoji_keywords = {}
 

@@ -50,10 +50,49 @@ Blocks unavailable time from iCal / Google Calendar.
 
 ### `[report]`
 - `include_unplanned`: show unplanned tasks too
-- `additional_attributes`: extra columns for planned tasks
-- `additional_attributes_unplanned`: extra columns for unplanned tasks
+- `attributes`: the complete ordered column list for planned tasks
+- `attributes_unplanned`: the complete ordered column list for unplanned tasks
 - `unplanned_max_due`: hide dated unplanned tasks beyond a Taskwarrior-relative horizon
 - `emoji_keywords`: map description keywords to emoji
+
+If you omit a column list, Taskcheck uses the default columns below.
+An explicit empty list selects no columns.
+Use Taskwarrior field names for custom columns, such as `estimated`, `due`, or `agent_weight`.
+The `id` column includes task icons. The `scheduling_hours` column shows the time allocated to that day.
+Column headings use labels from the active Taskwarrior configuration.
+Replace the old column lists with these complete lists when you migrate an existing configuration.
+
+### Default configuration
+
+The installer writes this configuration to `~/.config/task/taskcheck.toml`.
+
+```toml
+[time_maps]
+[time_maps.work]
+monday = [[9, 12.30], [14, 17]]
+tuesday = [[9, 12.30], [14, 17]]
+wednesday = [[9, 12.30], [14, 17]]
+thursday = [[9, 12.30], [14, 17]]
+friday = [[9, 12.30], [14, 17]]
+
+[scheduler]
+days_ahead = 365
+weight_urgency = 1.0
+urgency_epsilon = 0.1
+max_top_urgency_rounds = 10
+n_undos = 1
+
+[report]
+include_unplanned = true
+attributes = ["id", "project", "description", "scheduling_hours"]
+attributes_unplanned = ["id", "project", "description"]
+# unplanned_max_due = "30d"
+emoji_keywords = {}
+
+[timeline]
+# theme = "auto" # or "light" / "dark"
+```
+
 
 ## Taskwarrior settings installed by `taskcheck --install`
 

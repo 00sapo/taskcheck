@@ -102,8 +102,8 @@ def load_config():
         },
         "report": {
             "include_unplanned": true,
-            "additional_attributes": [],
-            "additional_attributes_unplanned": [],
+            "attributes": ["id", "project", "description", "scheduling_hours"],
+            "attributes_unplanned": ["id", "project", "description"],
             "emoji_keywords": {},
             ...
         }

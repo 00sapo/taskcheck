@@ -48,8 +48,8 @@ def sample_config():
         },
         "report": {
             "include_unplanned": True,
-            "additional_attributes": ["urgency", "priority"],
-            "additional_attributes_unplanned": ["urgency", "due"],
+            "attributes": ["id", "project", "description", "scheduling_hours", "urgency", "priority"],
+            "attributes_unplanned": ["id", "project", "description", "urgency", "due"],
             "emoji_keywords": {
                 "meeting": ":busts_in_silhouette:",
                 "code": ":computer:"
